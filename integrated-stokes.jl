@@ -7,6 +7,7 @@ const M = 14.0  # Mass of the black hole in solar masses
 const G = 6.67430e-11  # Gravitational constant in SI units
 const c = 2.998e8  # Speed of light in m/s
 const sigma = 5.670374419e-8  # Stefan-Boltzmann constant in SI
+const M_solar = 2e30    # solar mass
 
 # Functions to calculate temperature profile, flux, Chandrasekhar profile, Stokes parameters
 
