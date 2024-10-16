@@ -82,3 +82,4 @@ I_total, Q_total, U_total, V_total = integrate_stokes(r_range, M_dot)
 # Print final results
 println("Integrated Stokes Parameters:")
 println("I_total: $I_total, Q_total: $Q_total, U_total: $U_total, V_total: $V_total")
+
