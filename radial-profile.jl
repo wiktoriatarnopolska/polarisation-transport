@@ -37,7 +37,7 @@ end
 
 # Parameters for Kerr black hole
 M = 1.0            # Mass of the black hole (in units where G = c = 1)
-a = 0.998 * M        # Spin parameter of the black hole (must be -M <= a <= M)
+a = 0.0 * M        # Spin parameter of the black hole (must be -M <= a <= M)
 Mdot = 1.4e18      # Accretion rate in g/s
 f_col = 1.7        # Hardening factor
 
@@ -56,4 +56,8 @@ println("Novikov-Thorne radial profile:")
 println(profiles)
 
 # Plot the radial profile
-plot(radii, profiles, xlabel="Radius (r_g)", ylabel="Temperature (K)", title="Novikov-Thorne Radial Profile", legend=false)
+plot(radii, profiles, xlabel="Radius (r_g)", 
+ylabel="Temperature (K)", title="Novikov-Thorne Radial Profile", 
+legend=false)
+
+vline!([isco], label="ISCO", linestyle=:dash, color=:red)
