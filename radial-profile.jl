@@ -57,20 +57,37 @@ function novikov_thorne_profile(ξ::Float64, M::Float64, am::Float64, M_dot::Flo
 end
 
 # Generate radii from ISCO to 1000 r_g (radii are now dimensionless, in units of r_g)
-radii = range(isco, stop=1000, length=100)  # Radii in units of r_g
+radii = range(isco, stop=10, length=1000)  # Radii in units of r_g
 
 # Calculate Novikov-Thorne radial profile for each radius
 profiles = [novikov_thorne_profile(r, M, am, M_dot, f_col) for r in radii]
 
 # Plotting the radial profile
-plot(radii, profiles, xlabel="Radius (r_g)", ylabel="Temperature (K)", title="Novikov-Thorne Radial Profile", legend=false)
-
+plot(radii, profiles, xlabel="Radius (r_g)", ylabel="Temperature (K)", title="Novikov-Thorne Radial Profile",
+label = "a = 0.998", color=:red)
 # Marking the ISCO on the plot
-vline!([isco], label="ISCO", linestyle=:dash, color=:red)
+vline!([isco], linestyle=:dash, color=:red, label = "ISCO")
 
+###### a = 0.0 SHWARZSCHILD CASE ###########################
+
+am1 = 0.0
+# Calculate ISCO (in units of r_g)
+isco1 = isco_radius(am1)
+println("ISCO radius: $isco1 r_g")
+# Generate radii from ISCO to 1000 r_g (radii are now dimensionless, in units of r_g)
+radii1 = range(isco1, stop=10, length=1000)  # Radii in units of r_g
+# Calculate Novikov-Thorne radial profile for each radius
+profiles1 = [novikov_thorne_profile(r, M, am1, M_dot, f_col) for r in radii1]
+# Plotting the radial profile
+plot!(radii1, profiles1, label = "a = 0.0", color=:blue)
+# Marking the ISCO on the plot
+vline!([isco1], linestyle=:dash, color=:blue, label = "ISCO")
+
+##### LOG SCALE ###################################################
 # Plotting the radial profile with logarithmic scaling
 plot(radii, profiles, xlabel="Radius (r_g)", ylabel="Temperature (K)", 
-     title="Novikov-Thorne Radial Profile", legend=false, xscale=:log10, yscale=:log10)
-
+     title="Novikov-Thorne Radial Profile", xscale=:log10, yscale=:log10, label = "a = 0.998", colour=:red)
+plot!(radii1, profiles1, label = "a = 0.0", colour=:blue)
 # Marking the ISCO on the plot
 vline!([isco], label="ISCO", linestyle=:dash, color=:red)
+vline!([isco1], label="ISCO", linestyle=:dash, color=:blue)
