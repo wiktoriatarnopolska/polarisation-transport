@@ -91,3 +91,38 @@ plot!(radii1, profiles1, label = "a = 0.0", colour=:blue)
 # Marking the ISCO on the plot
 vline!([isco], label="ISCO", linestyle=:dash, color=:red)
 vline!([isco1], label="ISCO", linestyle=:dash, color=:blue)
+
+####################################################################################################################
+
+#   SETTING UP THE GRID
+
+# Set grid parameters
+N_r, N_phi = 10, 10  # Grid resolution
+rin = isco  # Inner radius in units of r_g (assuming ISCO at 6 r_g)
+rout = 10.0  # Outer radius in units of r_g
+
+# Geometric radial grid: Logarithmically spaced
+r_grid_log = range(log10(rin), stop=log10(rout), length=N_r)
+r_grid = 10 .^ r_grid_log  # Convert back to linear space
+
+# Linear radial grid
+r_grid = range(rin, rout, length=N_r)  # Radial grid in units of r_g
+
+phi_grid = range(0, 2π, length=N_phi)  # Azimuthal grid from 0 to 2π
+
+# Convert polar coordinates (r, φ) to Cartesian coordinates (x, y)
+x_vals = Float64[]
+y_vals = Float64[]
+
+for r in r_grid
+    for φ in phi_grid
+        x = r * cos(φ)
+        y = r * sin(φ)
+        push!(x_vals, x)
+        push!(y_vals, y)
+    end
+end
+
+# Plot the grid points
+scatter(x_vals, y_vals, xlabel="x (r_g)", ylabel="y (r_g)", 
+        title="Sampled Disk Grid", legend=false, aspect_ratio=:equal)
