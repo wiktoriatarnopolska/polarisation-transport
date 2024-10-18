@@ -144,5 +144,4 @@ scatter!(α_vals, β_vals,
         #xlabel = "α (r_g)", ylabel = "β (r_g)",
         #title="Impact parameters", 
         label = "impact parameters α and β",
-        
         aspect_ratio=:equal)
