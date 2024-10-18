@@ -114,15 +114,31 @@ phi_grid = range(0, 2π, length=N_phi)  # Azimuthal grid from 0 to 2π
 x_vals = Float64[]
 y_vals = Float64[]
 
+# Impact parameters
+α_vals, β_vals = Float64[], Float64[]
+
+# Observer inclination
+θobs = deg2rad(60)
+
 for r in r_grid
     for φ in phi_grid
         x = r * cos(φ)
         y = r * sin(φ)
         push!(x_vals, x)
         push!(y_vals, y)
+
+        # Impact parameters
+        α = -r * sin(φ)
+        β = r * cos(φ) * sin(θobs)
+        push!(α_vals, α)
+        push!(β_vals, β)
     end
 end
 
 # Plot the grid points
 scatter(x_vals, y_vals, xlabel="x (r_g)", ylabel="y (r_g)", 
         title="Sampled Disk Grid", legend=false, aspect_ratio=:equal)
+
+# Plot impact parameters
+scatter(α_vals, β_vals, xlabel = "α (r_g)", ylabel = "β (r_g)",
+        title="Impact parameters", legend=false, aspect_ratio=:equal)
