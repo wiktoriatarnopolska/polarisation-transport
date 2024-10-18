@@ -110,7 +110,7 @@ r_grid = range(rin, rout, length=N_r)  # Radial grid in units of r_g
 
 phi_grid = range(0, 2π, length=N_phi)  # Azimuthal grid from 0 to 2π
 
-# Convert polar coordinates (r, φ) to Cartesian coordinates (x, y)
+# Convert polar coordinates (r, φ) to Cartesian coordinates (x, y) for plotting
 x_vals = Float64[]
 y_vals = Float64[]
 
