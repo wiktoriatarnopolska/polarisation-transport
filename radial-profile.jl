@@ -106,7 +106,7 @@ r_grid_log = range(log10(rin), stop=log10(rout), length=N_r)
 r_grid = 10 .^ r_grid_log  # Convert back to linear space
 
 # Linear radial grid
-r_grid = range(rin, rout, length=N_r)  # Radial grid in units of r_g
+#r_grid = range(rin, rout, length=N_r)  # Radial grid in units of r_g
 
 phi_grid = range(0, 2π, length=N_phi)  # Azimuthal grid from 0 to 2π
 
@@ -137,8 +137,12 @@ end
 
 # Plot the grid points
 scatter(x_vals, y_vals, xlabel="x (r_g)", ylabel="y (r_g)", 
-        title="Sampled Disk Grid", legend=false, aspect_ratio=:equal)
+        title="Sampled Disk Grid", aspect_ratio=:equa, label = "x and y coordinates")
 
 # Plot impact parameters
-scatter(α_vals, β_vals, xlabel = "α (r_g)", ylabel = "β (r_g)",
-        title="Impact parameters", legend=false, aspect_ratio=:equal)
+scatter!(α_vals, β_vals, 
+        #xlabel = "α (r_g)", ylabel = "β (r_g)",
+        #title="Impact parameters", 
+        label = "impact parameters α and β",
+        
+        aspect_ratio=:equal)
