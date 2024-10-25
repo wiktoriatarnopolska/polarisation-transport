@@ -47,7 +47,7 @@ println("ISCO radius: $isco2 r_g")
 # Generate radii from ISCO to 1000 r_g (radii are now dimensionless, in units of r_g)
 radii2 = range(isco2, stop=rout, length=100)  # Radii in units of r_g
 # Calculate Novikov-Thorne radial profile for each radius
-profiles2 = [novikov_thorne_profile(r, isco2, M, am2, M_dot, f_col) for r in radii1]
+profiles2 = [novikov_thorne_profile(r, isco2, M, am2, M_dot, f_col) for r in radii2]
 # Plotting the radial profile
 plot!(radii2, profiles2, label = "a = $am2", color=:green)
 # Marking the ISCO on the plot
