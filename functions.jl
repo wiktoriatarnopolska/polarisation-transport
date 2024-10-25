@@ -19,7 +19,7 @@ function novikov_thorne_profile(r::Float64, isco::Float64,M::Float64, am::Float6
     ξ = sqrt(r)
 
     # Correct formula for temperature profile
-    f_ξa = (ξ^4 * (ξ^3 - 2 * ξ + 2 * am))^(-1) * 
+    f_ξa = (ξ^4 * (ξ^3 - 3 * ξ + 2 * am))^(-1) * 
     (
         ξ - ξ_ms - (3/2) * am * log(ξ / ξ_ms)
         - (3 * (ξ_1 - am)^2 * (ξ_1 * (ξ_1 - ξ_2) * (ξ_1 - ξ_3))^(-1) * log((ξ - ξ_1) / (ξ_ms - ξ_2)))

@@ -1,6 +1,6 @@
 # Parameters for Kerr black hole
 
-M = 3.0 * sol_M  # Mass of the black hole (kg)
+M = 10.0 * sol_M  # Mass of the black hole (kg)
 f_col = 1.7  # Hardening factor
 
 # redundant
