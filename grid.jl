@@ -1,7 +1,7 @@
 using Plots
 
-N_r = 100
-N_phi = 100
+N_r = 50
+N_phi = 50
 
 # Geometric radial grid: Logarithmically spaced
 r_grid_log = range(log10(rin), stop=log10(rout), length=N_r)

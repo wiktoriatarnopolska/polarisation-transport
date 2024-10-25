@@ -8,7 +8,7 @@ gravitational_radius(r_g::Float64) = r_g
 r_g = G * M / c^2  # Gravitational radius (meters)
 
 rin = isco_radius(am)
-rout = 100
+rout = 10
 
 # Observer inclination
 θobs = deg2rad(30)

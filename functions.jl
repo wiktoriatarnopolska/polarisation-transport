@@ -31,4 +31,4 @@ function novikov_thorne_profile(r::Float64, isco::Float64,M::Float64, am::Float6
     return T_amr
 end
 
-export isco_radius, novikov_thorne_profile
+export isco_radius, novikov_thorne_profile 
