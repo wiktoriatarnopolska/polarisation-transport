@@ -7,8 +7,9 @@ speed_of_light(c::Float64) = c
 Boltzmann_constant(k_B::Float64) = k_B
 Planck_constant(h::Float64) = h
 
-G = 6.6743e-11  # Gravitational constant (m^3 kg^-1 s^-2)
-c = 2.99792458e8  # Speed of light (m/s)
+# GR regime
+G = 1
+c = 1
 sol_M = 1.989e+30  # Solar mass (kg)
 M_dot = 1.4e18  # Accretion rate (kg/s)
 h = 4.135667696e-15  # Planck constant (eV·s)

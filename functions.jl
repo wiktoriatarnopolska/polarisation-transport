@@ -12,9 +12,9 @@ end
 
 # Function to calculate Novikov-Thorne radial profile (Page+Thorne 1974)
 function novikov_thorne_profile(r::Float64, isco::Float64,M::Float64, am::Float64, M_dot::Float64, f_col::Float64)
-    ξ_1 = 2 * cos(acos(am) - π/3)
-    ξ_2 = 2 * cos(acos(am) + π/3)
-    ξ_3 = -2 * cos(acos(am))
+    ξ_1 = 2 * cos((acos(am))/3 - π/3)
+    ξ_2 = 2 * cos((acos(am))/3 + π/3)
+    ξ_3 = -2 * cos((acos(am))/3)
     ξ_ms = sqrt(isco)  # ISCO is already in units of r_g
     ξ = sqrt(r)
 
