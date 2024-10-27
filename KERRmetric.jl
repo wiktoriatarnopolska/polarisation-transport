@@ -3,32 +3,35 @@ using Plots
 
 # Kerr metric parameters (constants)
 M = 1.0    # Mass of the black hole
-a = 0.5    # Spin parameter of the black hole
 E = 1.0    # Energy of the photon
 L_z = 2.0  # Angular momentum about z-axis
 Q = 1.0    # Carter constant
 
-# Define the Δ and Σ functions in the Kerr metric
+a = 0.5
+
+# Define the Δ function in the Kerr metric
 function Δ(r)
     return r^2 - 2 * M * r + a^2
 end
 
-# Radial part of the geodesic equation, R(r)
-function R(r)
+# Radial part of the geodesic equation, V_r
+function V_r(r)
     term1 = E * (r^2 + a^2) - a * L_z
-    term2 = r^2 + (L_z - a * E)^2 + Q
+    #term2 = r^2 + (L_z - a * E)^2 + Q
+    term2 = (L_z - a * E)^2 + Q
     return term1^2 - Δ(r) * term2
 end
 
 # Angular part of the geodesic equation, Θ(θ)
-function Θ(θ)
-    term1 = a^2 * (1 - E^2)
+function V_θ(θ)
+    #term1 = a^2 * (1 - E^2)
+    term1 = a^2 * (- E^2)
     term2 = L_z^2 / sin(θ)^2
     return Q - cos(θ)^2 * (term1 + term2)
 end
 
 # Derivative of the radial part with respect to r, dR/dr
-function dR_dr(r)
+function dV_r_dr(r)
     term1 = 2 * (E * (r^2 + a^2) - a * L_z) * E * 2 * r
     term2 = - (2 * r - 2 * M) * (r^2 + (L_z - a * E)^2 + Q)
     term3 = Δ(r) * (2 * r)
@@ -36,7 +39,7 @@ function dR_dr(r)
 end
 
 # Derivative of the angular part with respect to θ, dΘ/dθ
-function dΘ_dθ(θ)
+function dV_θ_dθ(θ)
     term1 = sin(θ) * cos(θ) * (a^2 * (1 - E^2) + L_z^2 / sin(θ)^2)
     term2 = cos(θ)^2 * (L_z^2 * cos(θ) / sin(θ)^3)
     return -2 * term1 - 2 * term2
@@ -56,19 +59,19 @@ function geodesic_equations!(du, u, params, λ)
     du[4] = E * (r^2 + a^2) / Δ_r - a * L_z / Δ_r  # dt/dλ
 
     # Radial and angular equations of motion
-    du[5] = -0.5 * dR_dr(r)  # d(pr)/dλ
-    du[6] = -0.5 * dΘ_dθ(θ)  # d(pθ)/dλ
+    du[5] = -0.5 * dV_r_dr(r)  # d(pr)/dλ
+    du[6] = -0.5 * dV_θ_dθ(θ)  # d(pθ)/dλ
 end
 
 # Initial conditions
 r0 = 10.0
-θ0 = π / 2
+θ0 = deg2rad(90)
 φ0 = 0.0
 t0 = 0.0
 
 # Initial momentum components (based on R and Θ)
-pr0 = sqrt(R(r0))    # dr/dλ
-pθ0 = sqrt(Θ(θ0))    # dθ/dλ
+pr0 = sqrt(V_r(r0))    # dr/dλ
+pθ0 = sqrt(V_θ(θ0))    # dθ/dλ
 
 # Initial state vector
 u0 = [r0, θ0, φ0, t0, pr0, pθ0]
@@ -76,9 +79,17 @@ u0 = [r0, θ0, φ0, t0, pr0, pθ0]
 # Time span (λ parameter)
 λ_span = (0.0, 50.0)
 
+# Solver options: Use 'saveat' for higher resolution
+saveat = 0.05  # Save solution at every 0.01 interval in λ for smoother curves
+
 # Solve the ODE
 prob = ODEProblem(geodesic_equations!, u0, λ_span)
-sol = solve(prob, Tsit5())
+sol = solve(prob, Tsit5(), saveat=saveat)
 
-# Plot results
-plot(sol, vars=(1, 2), xlabel="r", ylabel="θ", title="Photon Path in Kerr Metric")
+# Extract r and φ for plotting in polar coordinates
+r_vals = sol[1, :]  # r values over λ
+φ_vals = sol[3, :]  # φ values over λ
+
+# Polar plot
+plot(r_vals .* cos.(φ_vals), r_vals .* sin.(φ_vals), label = "photon path", xlabel="x", ylabel="y", title="Photon Path around Kerr Black Hole")
+scatter!([0], [0], color=:black, label="Black Hole")  # Mark the black hole location at the origin
