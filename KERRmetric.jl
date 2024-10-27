@@ -7,7 +7,7 @@ E = 1.0    # Energy of the photon
 L_z = 2.0  # Angular momentum about z-axis
 Q = 1.0    # Carter constant
 
-a = 0.5
+a = 0.0
 
 # Define the Δ function in the Kerr metric
 function Δ(r)
@@ -16,10 +16,10 @@ end
 
 # Radial part of the geodesic equation, V_r
 function V_r(r)
-    term1 = E * (r^2 + a^2) - a * L_z
+    T = E * (r^2 + a^2) - a * L_z
     #term2 = r^2 + (L_z - a * E)^2 + Q
     term2 = (L_z - a * E)^2 + Q
-    return term1^2 - Δ(r) * term2
+    return T^2 - Δ(r) * term2
 end
 
 # Angular part of the geodesic equation, Θ(θ)
@@ -55,8 +55,8 @@ function geodesic_equations!(du, u, params, λ)
     # Equations for dr/dλ and dθ/dλ
     du[1] = pr  # dr/dλ
     du[2] = pθ  # dθ/dλ
-    du[3] = (L_z / sin(θ)^2) - a * E + a * (E * (r^2 + a^2) - a * L_z) / Δ_r  # dφ/dλ
-    du[4] = E * (r^2 + a^2) / Δ_r - a * L_z / Δ_r  # dt/dλ
+    du[3] = -(a*E - L_z / sin(θ)^2) + ((a*E * (r^2 + a^2) - a * L_z)/ Δ_r)  # dφ/dλ
+    du[4] = - a *(a * E * sin(θ)^2 - L_z) + (r^2 + a^2)*((a*E * (r^2 + a^2) - a * L_z)/ Δ_r)  # dt/dλ
 
     # Radial and angular equations of motion
     du[5] = -0.5 * dV_r_dr(r)  # d(pr)/dλ
@@ -64,7 +64,7 @@ function geodesic_equations!(du, u, params, λ)
 end
 
 # Initial conditions
-r0 = 10.0
+r0 = 100.0
 θ0 = deg2rad(90)
 φ0 = 0.0
 t0 = 0.0
