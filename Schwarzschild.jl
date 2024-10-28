@@ -6,22 +6,16 @@ a = 0.0  # Schwarzschild spacetime (non-rotating black hole)
 
 # Initial conditions
 r0 = 10.0       # Initial radial distance
+r0 = 3.0
 θ0 = π / 2      # Equatorial plane
 ϕ0 = 0.0        # Initial azimuthal angle
-t0 = 0.0        # Initial time
-
-# Calculate specific energy E and angular momentum L for circular orbit
-E = (1 - 2 * M / r0) / sqrt(1 - 3 * M / r0)
-L = sqrt(M * r0) / sqrt(1 - 3 * M / r0)
+λ0 = 0.0        # Initial affine parameter
 
 # Metric components as a function of r and θ
 function metric(r, θ)
-    Σ = r^2 + a^2 * cos(θ)^2
-    Δ = r^2 - 2 * M * r + a^2
-
-    # Metric components
-    g_tt = -(1 - 2 * M / r)
-    g_rr = 1 / (1 - 2 * M / r)
+    f = 1 - 2 * M / r
+    g_tt = -f
+    g_rr = 1 / f
     g_θθ = r^2
     g_ϕϕ = r^2 * sin(θ)^2
 
@@ -34,32 +28,34 @@ function metric(r, θ)
     return g
 end
 
+# Set initial velocity components (adjust these values as desired)
+v_r = 0.0    # Radial velocity (negative for inward motion)
+v_θ = 0.0     # Polar velocity
+v_ϕ = 0.3     # Azimuthal (angular) velocity
+
+
 # Compute the metric at the initial position
 g0 = metric(r0, θ0)
-
-# Compute the initial 4-velocity components
 g_tt = g0[1,1]
+g_rr = g0[2,2]
+g_θθ = g0[3,3]
 g_ϕϕ = g0[4,4]
 
-v_r = 0.0
-v_θ = 0.0
-v_ϕ = L / g_ϕϕ  # v^ϕ = L / g_ϕϕ
-
 # Compute spatial term: v_i * g_ij * v_j
-spatial_term = g_ϕϕ * v_ϕ^2  # Since v_r = v_θ = 0
+spatial_term = g_rr * v_r^2 + g_θθ * v_θ^2 + g_ϕϕ * v_ϕ^2
 
-# Compute v_t using the normalization condition
-v_t = sqrt((-1.0 - spatial_term) / g_tt)
+# Compute v_t using the null normalization condition
+v_t = sqrt(spatial_term / (-g_tt))
 
 # Complete the initial velocity vector
 v = [v_t; v_r; v_θ; v_ϕ]
 
 # Verify the normalization condition
-norm = g0[1,1] * v[1]^2 + g0[4,4] * v[4]^2
-println("Normalization check: ", norm)  # Should be close to -1
+norm = g_tt * v[1]^2 + g_rr * v[2]^2 + g_θθ * v[3]^2 + g_ϕϕ * v[4]^2
+println("Null normalization check: ", norm)  # Should be close to 0
 
 # Combine position and velocity into initial condition vector (8 elements)
-u0 = [t0, r0, θ0, ϕ0, v[1], v[2], v[3], v[4]]
+u0 = [λ0, r0, θ0, ϕ0, v[1], v[2], v[3], v[4]]
 
 # Event horizon radius for the Schwarzschild metric
 r_horizon = 2 * M
@@ -99,7 +95,7 @@ function compute_christoffel_analytical(r, θ)
 end
 
 # Define the ODE function using an in-place form
-function intprob!(du, u, p, τ)
+function intprob!(du, u, p, λ)
     # Current position and velocity
     x = u[1:4]
     v = u[5:8]
@@ -139,7 +135,32 @@ tspan = (0.0, 1000.0)
 
 # Solve the ODE using in-place form
 prob = ODEProblem(intprob!, u0, tspan)
-sol = solve(prob, Vern9(), abstol=1e-14, reltol=1e-14, dtmax=0.01)
+sol = solve(prob, Tsit5(), abstol=1e-14, reltol=1e-14, dtmax=0.01)
+
+# Initialize arrays to store conserved quantities
+E_vals = []
+L_vals = []
+
+for i in 1:length(sol)
+    x = sol[i][1:4]
+    v = sol[i][5:8]
+
+    r = x[2]
+    θ = x[3]
+
+    # Compute the metric components at the current position
+    g = metric(r, θ)
+    g_tt = g[1,1]
+    g_ϕϕ = g[4,4]
+
+    # Compute conserved quantities
+    E = -g_tt * v[1]  # Energy-like quantity
+    L = g_ϕϕ * v[4]   # Angular momentum-like quantity
+
+    push!(E_vals, E)
+    push!(L_vals, L)
+end
+
 
 # Extract radial and azimuthal values
 r_vals = [sol[i][2] for i in 1:length(sol)]
@@ -153,10 +174,17 @@ pl = plot(
     legend = true,
     proj = :polar,
     color = :black,
-    ylim=(0.0, 15.0),
+    ylim=(0.0, r0 + 1.0),
     label="Event Horizon"
 )
 
-plot!(ϕ_vals, r_vals, lw=2, label="Geodesic Path", color=:blue)
+plot!(ϕ_vals, r_vals, lw=2, label="Photon Path", color=:blue)
 display(pl)
 
+# Extract affine parameter values
+λ_vals = sol.t
+
+# Plot Energy-like and Momentum-like Quantity
+plot(λ_vals, L_vals, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
+plot(λ_vals, E_vals, xlabel="Affine Parameter λ", ylabel="Energy-like Quantity E", label="E(λ)", legend=:bottomright, colour =:red)
+plot!(λ_vals, L_vals, title = "Conservation of E and L", xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
