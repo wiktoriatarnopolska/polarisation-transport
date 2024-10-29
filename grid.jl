@@ -3,6 +3,9 @@ using Plots
 N_r = 50
 N_phi = 50
 
+rin = isco_radius(0.9)
+rout = 10
+
 # Geometric radial grid: Logarithmically spaced
 r_grid_log = range(log10(rin), stop=log10(rout), length=N_r)
 r_grid = 10 .^ r_grid_log  # Convert back to linear space

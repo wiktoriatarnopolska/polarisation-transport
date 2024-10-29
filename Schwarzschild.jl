@@ -5,7 +5,7 @@ M = 1.0
 a = 0.0  # Schwarzschild spacetime (non-rotating black hole)
 
 # Initial conditions
-r0 = 10.0       # Initial radial distance
+#r0 = 10.0       # Initial radial distance
 r0 = 3.0
 θ0 = π / 2      # Equatorial plane
 ϕ0 = 0.0        # Initial azimuthal angle
@@ -179,12 +179,12 @@ pl = plot(
 )
 
 plot!(ϕ_vals, r_vals, lw=2, label="Photon Path", color=:blue)
-display(pl)
 
-# Extract affine parameter values
-λ_vals = sol.t
 
-# Plot Energy-like and Momentum-like Quantity
-plot(λ_vals, L_vals, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
-plot(λ_vals, E_vals, xlabel="Affine Parameter λ", ylabel="Energy-like Quantity E", label="E(λ)", legend=:bottomright, colour =:red)
-plot!(λ_vals, L_vals, title = "Conservation of E and L", xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
+# # Extract affine parameter values
+# λ_vals = sol.t
+
+# # Plot Energy-like and Momentum-like Quantity
+# plot(λ_vals, L_vals, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
+# plot(λ_vals, E_vals, xlabel="Affine Parameter λ", ylabel="Energy-like Quantity E", label="E(λ)", legend=:bottomright, colour =:red)
+# plot!(λ_vals, L_vals, title = "Conservation of E and L", xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
