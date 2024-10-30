@@ -61,9 +61,9 @@ v_t = (-2 * B - sqrt(Δ)) / (2 * A)  # Choose the negative root for future-direc
 v = [v_t; v_r; v_θ; v_ϕ]
 
 # Verify the normalization condition
-norm = g_tt * v[1]^2 + g_rr * v[2]^2 + g_θθ * v[3]^2 + g_ϕϕ * v[4]^2 +
+norm_ = g_tt * v[1]^2 + g_rr * v[2]^2 + g_θθ * v[3]^2 + g_ϕϕ * v[4]^2 +
 g_tϕ * v[1] * v[4]
-println("Null normalization check: ", norm)  # Should be close to 0
+println("Null normalization check: ", norm_)  # Should be close to 0
 
 # Combine position and velocity into initial condition vector (8 elements)
 u0 = [λ0, r0, θ0, ϕ0, v[1], v[2], v[3], v[4]]
