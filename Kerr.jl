@@ -1,174 +1,158 @@
-using LinearAlgebra, DifferentialEquations, Plots, ForwardDiff
+using LinearAlgebra, DifferentialEquations, Plots
+using Roots
 
 # Constants
 M = 1.0
-a = 0.9 * M  # Spin parameter for Kerr black hole
+a = 0.0  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
 
 # Initial conditions
-r0 = 10.0       # Initial radial distance
-θ0 = π / 2     # Equatorial plane
-ϕ0 = 0.0       # Initial azimuthal angle
-t0 = 0.0       # Initial time
+r0 = 3.0
+θ0 = π / 2
+ϕ0 = 0.0
+λ0 = 0.0
 
-# Metric function with corrected zeros
+# Kerr Metric components as a function of r and θ
 function metric(r, θ)
+    Δ = r^2 - 2 * r + a^2
     Σ = r^2 + a^2 * cos(θ)^2
-    Δ = r^2 - 2 * M * r + a^2
-    sinθ = sin(θ)
-    sin2θ = sinθ^2
 
-    # Metric components
-    g_tt = -(1 - (2 * M * r) / Σ)
-    g_tϕ = - (2 * M * a * r * sin2θ) / Σ
+    g_tt = -(1 - 2 * M * r / Σ)
     g_rr = Σ / Δ
     g_θθ = Σ
-    g_ϕϕ = ( (r^2 + a^2)^2 - Δ * a^2 * sin2θ ) * sin2θ / Σ
+    g_ϕϕ = (r^2 + a^2 + ((2 * M * r * a^2 * sin(θ)^2 )/ Σ)) * sin(θ)^2
+    g_tϕ = -2 * M * r * a * sin(θ)^2 / Σ
 
-    zero_value = zero(r)
-
-    # Construct the metric tensor
     g = [
-        g_tt        zero_value  zero_value  g_tϕ;
-        zero_value  g_rr        zero_value  zero_value;
-        zero_value  zero_value  g_θθ        zero_value;
-        g_tϕ        zero_value  zero_value  g_ϕϕ
+        g_tt     0        0        g_tϕ;
+        0        g_rr     0        0;
+        0        0        g_θθ     0;
+        g_tϕ     0        0        g_ϕϕ
     ]
     return g
 end
 
-# Function to compute the Christoffel symbols using automatic differentiation
-function compute_christoffel(r, θ)
-    x = [r, θ]
 
-    # Function to compute the metric components as a vector
-    function g_vector(x)
-        r, θ = x
-        g = metric(r, θ)
-        g_vec = []
-        for α in 1:4
-            for β in α:4  # Only upper triangle due to symmetry
-                push!(g_vec, g[α, β])
-            end
-        end
-        return g_vec
-    end
-
-    # Compute the Jacobian of the metric components with respect to coordinates
-    g_vec = g_vector(x)
-    dg_dx = ForwardDiff.jacobian(g_vector, x)
-
-    # Reconstruct the metric tensor and its derivatives
-    T = typeof(g_vec[1])
-    g = Array{T}(undef, 4, 4)
-    ∂g = zeros(T, 4, 4, 4)  # Partial derivatives with respect to t, r, θ, ϕ
-
-    idx = 1
-    for α in 1:4
-        for β in α:4
-            g[α, β] = g_vec[idx]
-            g[β, α] = g[α, β]  # Symmetry
-            ∂g[α, β, 2] = dg_dx[idx, 1]  # ∂g_{αβ}/∂r
-            ∂g[β, α, 2] = ∂g[α, β, 2]    # Symmetry
-            ∂g[α, β, 3] = dg_dx[idx, 2]  # ∂g_{αβ}/∂θ
-            ∂g[β, α, 3] = ∂g[α, β, 3]    # Symmetry
-            idx += 1
-        end
-    end
-
-    g_inv = inv(g)
-
-    # Compute the Christoffel symbols Γ^μ_{νλ}
-    Γ = zeros(T, 4, 4, 4)
-    for μ in 1:4
-        for ν in 1:4
-            for λ in 1:4
-                sum = zero(T)
-                for σ in 1:4  # Sum over all coordinates
-                    term1 = ∂g[λ, σ, ν]   # ∂g_{λσ}/∂x^ν
-                    term2 = ∂g[ν, σ, λ]   # ∂g_{νσ}/∂x^λ
-                    term3 = ∂g[ν, λ, σ]   # ∂g_{νλ}/∂x^σ
-                    sum += g_inv[μ, σ] * (term1 + term2 - term3)
-                end
-                Γ[μ, ν, λ] = 0.5 * sum
-            end
-        end
-    end
-
-    return Γ
-end
-
-# Set initial velocity components
-v_r = -0.1     # Small inward radial velocity
-v_θ = 0.0      # Polar velocity
-v_ϕ = 0.5      # Azimuthal (angular) velocity
-
-# Compute the metric at the initial position
-g0 = metric(r0, θ0)
+# Set initial velocity components (adjust these values as desired)
+v_r = 0.0    # Radial velocity (negative for inward motion)
+v_θ = 0.0     # Polar velocity
+v_ϕ = 0.3     # Azimuthal (angular) velocity
 
 # Extract metric components
-g_tt = g0[1, 1]
-g_tϕ = g0[1, 4]
-g_rr = g0[2, 2]
-g_θθ = g0[3, 3]
-g_ϕϕ = g0[4, 4]
+g_tt = g0[1,1]
+g_tϕ = g0[1,4]
+g_rr = g0[2,2]
+g_θθ = g0[3,3]
+g_ϕϕ = g0[4,4]
 
 # Compute coefficients for quadratic equation in v_t
 A = g_tt
-B = 2 * g_tϕ * v_ϕ
-C = g_rr * v_r^2 + g_θθ * v_θ^2 + g_ϕϕ * v_ϕ^2
+B = g_tϕ * v_ϕ
+C = g_ϕϕ * v_ϕ^2 + g_rr * v_r^2 + g_θθ * v_θ^2
 
-# Solve quadratic equation A * v_t^2 + B * v_t + C = 0
-Δ = B^2 - 4 * A * C
+# Solve quadratic equation A * v_t^2 + 2 * B * v_t + C = 0
+Δ = (2 * B)^2 - 4 * A * C
 if Δ < 0
     error("No real solution for v_t. Check initial conditions.")
 end
 
-v_t = (-B - sqrt(Δ)) / (2 * A)  # Choose the negative root for future-directed motion
+v_t = (-2 * B - sqrt(Δ)) / (2 * A)  # Choose the negative root for future-directed motion
 
 # Complete the initial velocity vector
 v = [v_t; v_r; v_θ; v_ϕ]
 
-# Verify the normalization condition (should be close to zero)
-norm = g_tt * v[1]^2 + 2 * g_tϕ * v[1] * v[4] + g_rr * v[2]^2 +
-       g_θθ * v[3]^2 + g_ϕϕ * v[4]^2
-println("Null normalization check: ", norm)
+# Verify the normalization condition
+norm = g_tt * v[1]^2 + g_rr * v[2]^2 + g_θθ * v[3]^2 + g_ϕϕ * v[4]^2 +
+g_tϕ * v[1] * v[4]
+println("Null normalization check: ", norm)  # Should be close to 0
 
-# Initial position and velocity vector
-u0 = [t0, r0, θ0, ϕ0, v[1], v[2], v[3], v[4]]
+# Combine position and velocity into initial condition vector (8 elements)
+u0 = [λ0, r0, θ0, ϕ0, v[1], v[2], v[3], v[4]]
 
-# Event horizon radius for the Kerr metric
-r_plus = M + sqrt(M^2 - a^2)  # Outer event horizon
+# Event horizon for the Kerr metric
+r_horizon = sqrt(1 - a^2)
 
-# Condition function for the callback
-function condition(u, t, integrator)
-    r = u[2]
-    return r - r_plus
+# Compute the Kerr Christoffel symbols analytically
+function compute_christoffel_analytical(r, θ)
+    Δ = r^2 - 2 * r + a^2
+    Σ = r^2 + a^2 * cos(θ)^2
+    Γ = zeros(4, 4, 4)
+    f = r^2 - a^2 * cos(θ)^2
+    A = (r^2 + a^2) * Σ + 2 * a^2 * r * sin(θ)^2
+
+    Γ[1, 1, 2] = (r^2 + a^2) * f / Σ^2 * Δ
+    Γ[1, 2, 1] = Γ[1, 1, 2]
+    Γ[1, 1, 3] = - 2 * a^2* r * sin(θ) * cos(θ) / Σ^2
+    Γ[1, 3, 1] = Γ[1, 1, 3]
+
+    Γ[2, 1, 1] = Δ * f / Σ^3
+    Γ[2, 1, 4] = - Δ * a * sin(θ)^2 * f / Σ^3
+    Γ[2, 4, 1] = Γ[2, 1, 4]
+    Γ[2, 2, 2] = (r * a^2 * sin(θ)^2 - f) / Σ * Δ
+    Γ[2, 2, 3] = - a^2 * sin(θ) * cos(θ) / Σ
+    Γ[2, 3, 2] = Γ[2, 2, 3]
+    Γ[2, 3, 3] = - r * Δ / Σ
+
+    Γ[4, 3, 4] = ((cos(θ) / sin(θ)) / Σ^2) * (Σ^2 + 2 * a^2 * r * sin(θ)^2)
+    Γ[4, 4, 3] = Γ[4, 3, 4]
+    
+    Γ[3, 1, 1] = - 2 * a^2 * r * sin(θ) * cos(θ) / Σ^3
+
+    Γ[4, 1, 2] = a * f / (Σ^2 * Δ)
+    Γ[4, 2, 1] = Γ[4, 1, 2]
+
+    Γ[4, 1, 3] = - 2 * a * r * (cos(θ) / sin(θ)) / Σ^2
+    Γ[4, 3, 1] = Γ[4, 1, 3]
+
+    Γ[3, 1, 4] = 2 * a * r * (r^2 + a^2) * sin(θ) * cos(θ) / Σ^3
+    Γ[3, 4, 1] = Γ[3, 1, 4]
+
+    Γ[3, 2, 2] = a^2 * sin(θ) * cos(θ) / Σ * Δ
+
+    Γ[3, 2, 3] = r / Σ
+    Γ[3, 3, 2] = Γ[3, 2, 3]
+
+    Γ[3, 3, 3] = - a^2 * sin(θ) * cos(θ) / Σ
+
+    Γ[1, 3, 4] = 2 * a^3 * r * sin(θ)^3 * cos(θ) / Σ^2
+    Γ[1, 4, 3] = Γ[1, 3, 4]
+
+    Γ[1, 2, 4] = a * sin(θ)^2 * (a^2 * cos(θ)^2 *(a^2 - r^2) - r^2 * (a^2 + 3 * r^2)) / (2 * Σ^2 * Δ)
+    Γ[1, 4, 2] = Γ[1, 2, 4]
+
+    Γ[4, 2, 4] = (r * Σ^2 + (a^4 * sin(θ)^2 * cos(θ)^2 - r^2(Σ + r^2 + a^2))) / (Σ * Δ)
+    Γ[4, 4, 2] = Γ[4, 2, 4]
+
+    Γ[2, 4, 4] = (Δ * sin(θ)^2 / (Σ^3)) * (- r * Σ^2 + a^2 * sin(θ)^2 * f)
+    
+    Γ[3, 4, 4] = (- sin(θ) * cos(θ) / Σ^3) * (A * Σ + (r^2 + a^2) * 2 * a^2 * r * sin(θ)^2 )
+
+    return Γ
 end
 
-# Affect function to terminate integration
-function affect!(integrator)
-    terminate!(integrator)
-end
-
-# Create the ContinuousCallback
-termination_cb = ContinuousCallback(condition, affect!)
-
-# Define the ODE function with corrections
+# Define the ODE function using an in-place form
 function intprob!(du, u, p, λ)
-    x = u[1:4]  # Position vector
-    v = u[5:8]  # Velocity vector
+    # Current position and velocity
+    x = u[1:4]
+    v = u[5:8]
 
     r_val, θ_val = x[2], x[3]
 
-    du .= zero(eltype(u))
+    # Initialize du
+    du .= 0.0
 
-    # Compute the Christoffel symbols at the current position
-    Γ = compute_christoffel(r_val, θ_val)
+    # Terminate the integration if r crosses the event horizon
+    if r_val <= r_horizon
+        du[1:4] .= v
+        return
+    end
+
+    # Compute analytical Christoffel symbols
+    Γ = compute_christoffel_analytical(r_val, θ_val)
 
     # Compute the derivatives of velocity
-    dv = zeros(eltype(u), 4)
+    dv = zeros(4)
     for μ in 1:4
-        sum_ = zero(eltype(u))
+        sum_ = 0.0
         for ν in 1:4
             for λ in 1:4
                 sum_ += Γ[μ, ν, λ] * v[ν] * v[λ]
@@ -178,33 +162,53 @@ function intprob!(du, u, p, λ)
     end
 
     # Assign derivatives to du
-    du[1:4] = v
-    du[5:8] = dv
+    du[1:4] .= v
+    du[5:8] .= dv
 end
 
-
-# Define the ODE problem and solve
-tspan = (0.0, 100.0)
+# Set up and solve the ODE problem
+tspan = (0.0, 1000.0)
 prob = ODEProblem(intprob!, u0, tspan)
-sol = solve(prob, Tsit5(), callback=termination_cb, abstol=1e-10, reltol=1e-10)
+sol = solve(prob, Tsit5(), abstol=1e-14, reltol=1e-14, dtmax=0.01)
 
-# Extract trajectory data
-t_vals = sol.t
-r_vals = [u[2] for u in sol.u]
-θ_vals = [u[3] for u in sol.u]
-ϕ_vals = [u[4] for u in sol.u]
+# # Initialize arrays to store conserved quantities
+# E_vals = []
+# L_vals = []
 
-# Plot the trajectory in polar coordinates
+for i in 1:length(sol)
+    x = sol[i][1:4]
+    v = sol[i][5:8]
+
+    r = x[2]
+    θ = x[3]
+
+    # Compute the metric components at the current position
+    g = metric(r, θ)
+    g_tt = g[1,1]
+    g_ϕϕ = g[4,4]
+
+    # # Compute conserved quantities
+    # E = -g_tt * v[1]  # Energy-like quantity
+    # L = g_ϕϕ * v[4]   # Angular momentum-like quantity
+
+    # push!(E_vals, E)
+    # push!(L_vals, L)
+end
+
+# Extract radial and azimuthal values for plotting
+r_vals = [sol[i][2] for i in 1:length(sol)]
+ϕ_vals = [sol[i][4] for i in 1:length(sol)]
+
+# Plot the geodesic path and event horizon for Kerr metric
 pl = plot(
-    θ -> r_plus,
+    θ -> r_horizon,
     0:0.01:2π,
     lw = 2,
     legend = true,
     proj = :polar,
     color = :black,
-    ylim=(0.0, maximum(r_vals) + 1.0),
+    ylim=(0.0, 10),
     label="Event Horizon"
 )
 
 plot!(ϕ_vals, r_vals, lw=2, label="Photon Path", color=:blue)
-display(pl)

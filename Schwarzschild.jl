@@ -33,7 +33,6 @@ v_r = 0.0    # Radial velocity (negative for inward motion)
 v_θ = 0.0     # Polar velocity
 v_ϕ = 0.3     # Azimuthal (angular) velocity
 
-
 # Compute the metric at the initial position
 g0 = metric(r0, θ0)
 g_tt = g0[1,1]
@@ -58,7 +57,7 @@ println("Null normalization check: ", norm)  # Should be close to 0
 u0 = [λ0, r0, θ0, ϕ0, v[1], v[2], v[3], v[4]]
 
 # Event horizon radius for the Schwarzschild metric
-r_horizon = 2 * M
+r_horizon = 2
 
 # Analytical Christoffel symbols for Schwarzschild metric
 function compute_christoffel_analytical(r, θ)
@@ -69,12 +68,12 @@ function compute_christoffel_analytical(r, θ)
     f = 1 - 2 * M / r
 
     # Non-zero Christoffel symbols
-    Γ[1,2,1] = M / (r^2 * f)
+    Γ[1,2,1] = 1 / (r^2 * f)
     Γ[1,1,2] = Γ[1,2,1]  # Symmetry in lower indices
 
-    Γ[2,1,1] = f * M / r^2
+    Γ[2,1,1] = f / r^2
 
-    Γ[2,2,2] = M / (r^2 * f)
+    Γ[2,2,2] = 1 / (r^2 * f)
 
     Γ[2,3,3] = -r * f
 
@@ -153,12 +152,12 @@ for i in 1:length(sol)
     g_tt = g[1,1]
     g_ϕϕ = g[4,4]
 
-    # Compute conserved quantities
-    E = -g_tt * v[1]  # Energy-like quantity
-    L = g_ϕϕ * v[4]   # Angular momentum-like quantity
+    # # Compute conserved quantities
+    # E = -g_tt * v[1]  # Energy-like quantity
+    # L = g_ϕϕ * v[4]   # Angular momentum-like quantity
 
-    push!(E_vals, E)
-    push!(L_vals, L)
+    # push!(E_vals, E)
+    # push!(L_vals, L)
 end
 
 
@@ -185,6 +184,14 @@ plot!(ϕ_vals, r_vals, lw=2, label="Photon Path", color=:blue)
 # λ_vals = sol.t
 
 # # Plot Energy-like and Momentum-like Quantity
-# plot(λ_vals, L_vals, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
+# plot(λ_vals, L_val1s, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
 # plot(λ_vals, E_vals, xlabel="Affine Parameter λ", ylabel="Energy-like Quantity E", label="E(λ)", legend=:bottomright, colour =:red)
 # plot!(λ_vals, L_vals, title = "Conservation of E and L", xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
+
+# x_vals = [r * cos(ϕ) * sin(θ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+# y_vals = [r * sin(ϕ) * sin(θ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+# z_vals = [r * cos(θ) for (r, θ) in zip(r_vals, θ_vals)]
+
+# # Plot the photon path
+# plot(x_vals, y_vals, z_vals, lw=2, label="Photon Path", aspect_ratio=:equal)
+# plot!(xlabel="x", ylabel="y", zlabel="z", title="Photon Orbit in Kerr Spacetime")
