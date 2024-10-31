@@ -26,9 +26,10 @@ function novikov_thorne_profile(r::Float64, isco::Float64,M::Float64, am::Float6
         - (3 * (ξ_3 - am)^2 * (ξ_3 * (ξ_3 - ξ_1) * (ξ_3 - ξ_2))^(-1) * log((ξ - ξ_3) / (ξ_ms - ξ_3)))
     )
 
-    T_amr = 741 * f_col * (M / sol_M)^(-1/2) * (M_dot / sol_M)^(1/4) * (f_ξa)^(1/4)
+    T_amr = 741 * f_col * (M / sol_M)^(-1/2) * (M_dot / sol_M)^(1/4) * (f_ξa)^(1/4) # keV
+    T_K = T_amr * 1e3 / k_B
     
-    return T_amr
+    return T_K
 end
 
 export isco_radius, novikov_thorne_profile 
