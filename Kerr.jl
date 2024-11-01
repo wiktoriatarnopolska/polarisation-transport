@@ -3,10 +3,10 @@ using Roots
 
 # Constants
 M = 1.0
-a = 0.0  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
+a = 0.9  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
 
 # Initial conditions
-r0 = 3.0
+r0 = 100.0
 θ0 = π / 2
 ϕ0 = 0.0
 λ0 = 0.0
@@ -34,9 +34,9 @@ end
 
 
 # Set initial velocity components (adjust these values as desired)
-v_r = 0.0    # Radial velocity (negative for inward motion)
+v_r = - 1.0    # Radial velocity (negative for inward motion)
 v_θ = 0.0     # Polar velocity
-v_ϕ = 0.3     # Azimuthal (angular) velocity
+v_ϕ = 0.0     # Azimuthal (angular) velocity
 
 g0 = metric(r0, θ0)
 # Extract metric components
@@ -79,56 +79,56 @@ function compute_christoffel_analytical(r, θ)
     Σ = r^2 + a^2 * cos(θ)^2
     Γ = zeros(4, 4, 4)
     #f = r^2 - a^2 * cos(θ)^2
-    #f = 1 - 2 / r
+    f = 1 - 2 / r
 
     A = (r^2 + a^2) * Σ + 2 * a^2 * r * sin(θ)^2
 
     Γ[1, 1, 2] = (r^2 + a^2) * (r^2 - a^2 * cos(θ)^2) / (Σ^2 * Δ)
     Γ[1, 2, 1] = Γ[1, 1, 2]
 
-    #Γ[1, 1, 3] = - 2 * a^2* r * sin(θ) * cos(θ) / Σ^2
-    #Γ[1, 3, 1] = Γ[1, 1, 3]
+    Γ[1, 1, 3] = - 2 * a^2* r * sin(θ) * cos(θ) / Σ^2
+    Γ[1, 3, 1] = Γ[1, 1, 3]
 
-    #Γ[2, 1, 1] = Δ * (r^2 - a^2 * cos(θ)^2)/ Σ^3
-    Γ[2,1,1] = (1 - 2 / r) / r^2
+    Γ[2, 1, 1] = r^4 * f + a^2*(r^2-cos(θ)^2 * (r-1)^2)/ Σ^3
+    #Γ[2,1,1] = f / r^2
 
-    #Γ[2, 1, 4] = - Δ * a * sin(θ)^2 * f / Σ^3
-    #Γ[2, 4, 1] = Γ[2, 1, 4]
+    Γ[2, 1, 4] = - Δ * a * sin(θ)^2 * f / Σ^3
+    Γ[2, 4, 1] = Γ[2, 1, 4]
 
-    #Γ[2, 2, 2] = (r * a^2 * sin(θ)^2 - (r^2 - a^2 * cos(θ)^2)) / (Σ * Δ)
-    Γ[2,2,2] = 1 / (r^2 * (1 - 2 / r))
+    Γ[2, 2, 2] = (r * a^2 * sin(θ)^2 - (r^2 - a^2 * cos(θ)^2)) / (Σ * Δ)
+    #Γ[2,2,2] = 1 / (r^2 * f)
 
-    #Γ[2, 2, 3] = - a^2 * sin(θ) * cos(θ) / Σ
-    #Γ[2, 3, 2] = Γ[2, 2, 3]
+    Γ[2, 2, 3] = - a^2 * sin(θ) * cos(θ) / Σ
+    Γ[2, 3, 2] = Γ[2, 2, 3]
 
     Γ[2, 3, 3] = - r * Δ / Σ
 
     Γ[4, 3, 4] = ((cos(θ) / sin(θ)) / Σ^2) * (Σ^2 + 2 * a^2 * r * sin(θ)^2)
     Γ[4, 4, 3] = Γ[4, 3, 4]
 
-    #Γ[3, 1, 1] = - 2 * a^2 * r * sin(θ) * cos(θ) / Σ^3
+    Γ[3, 1, 1] = - 2 * a^2 * r * sin(θ) * cos(θ) / Σ^3
 
-    #Γ[4, 1, 2] = a * f / (Σ^2 * Δ)
-    #Γ[4, 2, 1] = Γ[4, 1, 2]
+    Γ[4, 1, 2] = a * f / (Σ^2 * Δ)
+    Γ[4, 2, 1] = Γ[4, 1, 2]
 
-    #Γ[4, 1, 3] = - 2 * a * r * (cos(θ) / sin(θ)) / Σ^2
-    #Γ[4, 3, 1] = Γ[4, 1, 3]
+    Γ[4, 1, 3] = - 2 * a * r * (cos(θ) / sin(θ)) / Σ^2
+    Γ[4, 3, 1] = Γ[4, 1, 3]
 
-    #Γ[3, 1, 4] = 2 * a * r * (r^2 + a^2) * sin(θ) * cos(θ) / Σ^3
-    #Γ[3, 4, 1] = Γ[3, 1, 4]
+    Γ[3, 1, 4] = 2 * a * r * (r^2 + a^2) * sin(θ) * cos(θ) / Σ^3
+    Γ[3, 4, 1] = Γ[3, 1, 4]
 
-    #Γ[3, 2, 2] = a^2 * sin(θ) * cos(θ) / (Σ * Δ)
+    Γ[3, 2, 2] = a^2 * sin(θ) * cos(θ) / (Σ * Δ)
 
     Γ[3, 2, 3] = r / Σ
     Γ[3, 3, 2] = Γ[3, 2, 3]
 
-    #Γ[3, 3, 3] = - a^2 * sin(θ) * cos(θ) / Σ
+    Γ[3, 3, 3] = - a^2 * sin(θ) * cos(θ) / Σ
 
-    #Γ[1, 3, 4] = 2 * a^3 * r * sin(θ)^3 * cos(θ) / Σ^2
-    #Γ[1, 4, 3] = Γ[1, 3, 4]
+    Γ[1, 3, 4] = 2 * a^3 * r * sin(θ)^3 * cos(θ) / Σ^2
+    Γ[1, 4, 3] = Γ[1, 3, 4]
 
-    #Γ[1, 2, 4] = a * sin(θ)^2 * (a^2 * cos(θ)^2 *(a^2 - r^2) - r^2 * (a^2 + 3 * r^2)) / (Σ^2 * Δ)
-    #Γ[1, 4, 2] = Γ[1, 2, 4]
+    Γ[1, 2, 4] = a * sin(θ)^2 * (a^2 * cos(θ)^2 *(a^2 - r^2) - r^2 * (a^2 + 3 * r^2)) / (Σ^2 * Δ)
+    Γ[1, 4, 2] = Γ[1, 2, 4]
 
     Γ[4, 2, 4] = (r * Σ^2 + (a^4 * sin(θ)^2 * cos(θ)^2 - r^2*(Σ + r^2 + a^2))) / (Σ^2 * Δ)
     Γ[4, 4, 2] = Γ[4, 2, 4]
@@ -180,8 +180,8 @@ end
 # Set up and solve the ODE problem
 tspan = (0.0, 1000.0)
 prob = ODEProblem(intprob!, u0, tspan)
-sol = @time solve(prob, Tsit5(), abstol=1e-16, reltol=1e-16, dtmax=0.01)
-
+sol = @time solve(prob, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=0.01)
+#sol = @time solve(prob, ESERK5(), atol=1e-16, reltol = 1e-16, dt = 0.01)
 # # Initialize arrays to store conserved quantities
 # E_vals = []
 # L_vals = []
@@ -196,6 +196,9 @@ for i in 1:length(sol)
     # Compute the metric components at the current position
     g = metric(r, θ)
     g_tt = g[1,1]
+    g_tϕ = g[1,4]
+    g_rr = g[2,2]
+    g_θθ = g[3,3]
     g_ϕϕ = g[4,4]
 
 
@@ -219,7 +222,7 @@ pl = plot(
     legend = true,
     proj = :polar,
     color = :black,
-    ylim=(0.0, 10),
+    ylim=(0.0, 15),
     label="Event Horizon"
 )
 
