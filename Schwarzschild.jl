@@ -73,7 +73,7 @@ function compute_christoffel_analytical(r, θ)
 
     Γ[2,1,1] = f / r^2
 
-    Γ[2,2,2] = 1 / (r^2 * f)
+    Γ[2,2,2] = - 1 / (r^2 * f)
 
     Γ[2,3,3] = -r * f
 
