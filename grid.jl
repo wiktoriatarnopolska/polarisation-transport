@@ -3,7 +3,7 @@ using Plots
 N_r = 50
 N_phi = 50
 
-rin = isco_radius(0.9)
+rin = isco_radius(0.0)
 rout = 10
 
 # Geometric radial grid: Logarithmically spaced

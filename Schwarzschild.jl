@@ -152,12 +152,12 @@ for i in 1:length(sol)
     g_tt = g[1,1]
     g_ϕϕ = g[4,4]
 
-    # # Compute conserved quantities
-    # E = -g_tt * v[1]  # Energy-like quantity
-    # L = g_ϕϕ * v[4]   # Angular momentum-like quantity
+    # Compute conserved quantities
+    E = -g_tt * v[1]  # Energy-like quantity
+    L = g_ϕϕ * v[4]   # Angular momentum-like quantity
 
-    # push!(E_vals, E)
-    # push!(L_vals, L)
+    push!(E_vals, E)
+    push!(L_vals, L)
 end
 
 
@@ -173,25 +173,19 @@ pl = plot(
     legend = true,
     proj = :polar,
     color = :black,
-    ylim=(0.0, r0 + 1.0),
+    ylim=(0.0, r0 +1),
     label="Event Horizon"
 )
 
 plot!(ϕ_vals, r_vals, lw=2, label="Photon Path", color=:blue)
 
 
-# # Extract affine parameter values
-# λ_vals = sol.t
+# Extract affine parameter values
+λ_vals = sol.t
 
-# # Plot Energy-like and Momentum-like Quantity
-# plot(λ_vals, L_val1s, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
-# plot(λ_vals, E_vals, xlabel="Affine Parameter λ", ylabel="Energy-like Quantity E", label="E(λ)", legend=:bottomright, colour =:red)
-# plot!(λ_vals, L_vals, title = "Conservation of E and L", xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
+# Plot Energy-like and Momentum-like Quantity
+plot(λ_vals, L_vals, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
+plot(λ_vals, E_vals, xlabel="Affine Parameter λ", ylabel="Energy-like Quantity E", label="E(λ)", legend=:bottomright, colour =:red)
+plot!(λ_vals, L_vals, title = "Conservation of E and L", xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
 
-# x_vals = [r * cos(ϕ) * sin(θ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
-# y_vals = [r * sin(ϕ) * sin(θ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
-# z_vals = [r * cos(θ) for (r, θ) in zip(r_vals, θ_vals)]
-
-# # Plot the photon path
-# plot(x_vals, y_vals, z_vals, lw=2, label="Photon Path", aspect_ratio=:equal)
-# plot!(xlabel="x", ylabel="y", zlabel="z", title="Photon Orbit in Kerr Spacetime")
+# add cartesian coords ?
