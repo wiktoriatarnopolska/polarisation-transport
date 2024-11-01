@@ -6,7 +6,7 @@ a = 0.0  # Schwarzschild spacetime (non-rotating black hole)
 
 # Initial conditions
 #r0 = 10.0       # Initial radial distance
-r0 = 3.0
+r0 = 1000.0
 θ0 = π / 2      # Equatorial plane
 ϕ0 = 0.0        # Initial azimuthal angle
 λ0 = 0.0        # Initial affine parameter
