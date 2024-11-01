@@ -6,7 +6,7 @@ a = 0.0  # Schwarzschild spacetime (non-rotating black hole)
 
 # Initial conditions
 #r0 = 10.0       # Initial radial distance
-r0 = 1000.0
+r0 = 100.0
 θ0 = π / 2      # Equatorial plane
 ϕ0 = 0.0        # Initial azimuthal angle
 λ0 = 0.0        # Initial affine parameter
@@ -68,7 +68,7 @@ function compute_christoffel_analytical(r, θ)
     f = 1 - 2 * M / r
 
     # Non-zero Christoffel symbols
-    Γ[1,2,1] = 1 / (r^2 * f)
+    Γ[1,2,1] = 1 / r * (r - 2)
     Γ[1,1,2] = Γ[1,2,1]  # Symmetry in lower indices
 
     Γ[2,1,1] = f / r^2
@@ -137,8 +137,8 @@ prob = ODEProblem(intprob!, u0, tspan)
 sol = solve(prob, Tsit5(), abstol=1e-14, reltol=1e-14, dtmax=0.01)
 
 # Initialize arrays to store conserved quantities
-E_vals = []
-L_vals = []
+# E_vals = []
+# L_vals = []
 
 for i in 1:length(sol)
     x = sol[i][1:4]
@@ -147,17 +147,21 @@ for i in 1:length(sol)
     r = x[2]
     θ = x[3]
 
-    # Compute the metric components at the current position
-    g = metric(r, θ)
-    g_tt = g[1,1]
-    g_ϕϕ = g[4,4]
+    # # Compute the metric components at the current position
+    # g = metric(r, θ)
+    # g_tt = g[1,1]
+    # g_rr = g[2,2]
+    # g_θθ = g[3,3]
+    # g_ϕϕ = g[4,4]
+    
 
-    # Compute conserved quantities
-    E = -g_tt * v[1]  # Energy-like quantity
-    L = g_ϕϕ * v[4]   # Angular momentum-like quantity
 
-    push!(E_vals, E)
-    push!(L_vals, L)
+    # # Compute conserved quantities
+    # E = -g_tt * v[1]  # Energy-like quantity
+    # L = g_ϕϕ * v[4]   # Angular momentum-like quantity
+
+    # push!(E_vals, E)
+    # push!(L_vals, L)
 end
 
 
@@ -173,19 +177,19 @@ pl = plot(
     legend = true,
     proj = :polar,
     color = :black,
-    ylim=(0.0, r0 +1),
+    ylim=(0.0, 15),
     label="Event Horizon"
 )
 
 plot!(ϕ_vals, r_vals, lw=2, label="Photon Path", color=:blue)
 
 
-# Extract affine parameter values
-λ_vals = sol.t
+# # Extract affine parameter values
+# λ_vals = sol.t
 
-# Plot Energy-like and Momentum-like Quantity
-plot(λ_vals, L_vals, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
-plot(λ_vals, E_vals, xlabel="Affine Parameter λ", ylabel="Energy-like Quantity E", label="E(λ)", legend=:bottomright, colour =:red)
-plot!(λ_vals, L_vals, title = "Conservation of E and L", xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
+# # Plot Energy-like and Momentum-like Quantity
+# plot(λ_vals, L_vals, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
+# plot(λ_vals, E_vals, xlabel="Affine Parameter λ", ylabel="Energy-like Quantity E", label="E(λ)", legend=:bottomright, colour =:red)
+# plot!(λ_vals, L_vals, title = "Conservation of E and L", xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
 
 # add cartesian coords ?

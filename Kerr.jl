@@ -3,7 +3,7 @@ using Roots
 
 # Constants
 M = 1.0
-a = 0.9  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
+a = 0.998  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
 
 # Initial conditions
 r0 = 100.0
@@ -83,25 +83,33 @@ function compute_christoffel_analytical(r, θ)
 
     A = (r^2 + a^2) * Σ + 2 * a^2 * r * sin(θ)^2
 
-    Γ[1, 1, 2] = (r^2 + a^2) * (r^2 - a^2 * cos(θ)^2) / (Σ^2 * Δ)
+    Γ[1, 1, 2] = (r^2 + a^2) * (r^2 - a^2 * cos(θ)^2) / ((Σ^2) * Δ)
     Γ[1, 2, 1] = Γ[1, 1, 2]
 
     Γ[1, 1, 3] = - 2 * a^2* r * sin(θ) * cos(θ) / Σ^2
     Γ[1, 3, 1] = Γ[1, 1, 3]
 
-    Γ[2, 1, 1] = r^4 * f + a^2*(r^2-cos(θ)^2 * (r-1)^2)/ Σ^3
-    #Γ[2,1,1] = f / r^2
+    Γ[2,1,1] = Δ * (r^2 + a^2 * cos(θ)^2) / (Σ^3)
 
     Γ[2, 1, 4] = - Δ * a * sin(θ)^2 * f / Σ^3
     Γ[2, 4, 1] = Γ[2, 1, 4]
 
     Γ[2, 2, 2] = (r * a^2 * sin(θ)^2 - (r^2 - a^2 * cos(θ)^2)) / (Σ * Δ)
-    #Γ[2,2,2] = 1 / (r^2 * f)
 
     Γ[2, 2, 3] = - a^2 * sin(θ) * cos(θ) / Σ
     Γ[2, 3, 2] = Γ[2, 2, 3]
 
     Γ[2, 3, 3] = - r * Δ / Σ
+
+    Γ[2, 4, 4] = (Δ * sin(θ)^2 / (Σ^3)) * (- r * Σ^2 + a^2 * sin(θ)^2 * (r^2 - a^2 * cos(θ)^2))
+
+    Γ[3, 2, 3] = r / Σ
+    Γ[3, 3, 2] = Γ[3, 2, 3]
+
+    Γ[3, 4, 4] = (- sin(θ) * cos(θ) / Σ^3) * (A * Σ + (r^2 + a^2) * 2 * a^2 * r * sin(θ)^2 )
+
+    Γ[4, 2, 4] = (r * Σ^2 + (a^4 * sin(θ)^2 * cos(θ)^2 - r^2*(Σ + r^2 + a^2))) / (Σ^2 * Δ)
+    Γ[4, 4, 2] = Γ[4, 2, 4]
 
     Γ[4, 3, 4] = ((cos(θ) / sin(θ)) / Σ^2) * (Σ^2 + 2 * a^2 * r * sin(θ)^2)
     Γ[4, 4, 3] = Γ[4, 3, 4]
@@ -119,9 +127,6 @@ function compute_christoffel_analytical(r, θ)
 
     Γ[3, 2, 2] = a^2 * sin(θ) * cos(θ) / (Σ * Δ)
 
-    Γ[3, 2, 3] = r / Σ
-    Γ[3, 3, 2] = Γ[3, 2, 3]
-
     Γ[3, 3, 3] = - a^2 * sin(θ) * cos(θ) / Σ
 
     Γ[1, 3, 4] = 2 * a^3 * r * sin(θ)^3 * cos(θ) / Σ^2
@@ -129,13 +134,6 @@ function compute_christoffel_analytical(r, θ)
 
     Γ[1, 2, 4] = a * sin(θ)^2 * (a^2 * cos(θ)^2 *(a^2 - r^2) - r^2 * (a^2 + 3 * r^2)) / (Σ^2 * Δ)
     Γ[1, 4, 2] = Γ[1, 2, 4]
-
-    Γ[4, 2, 4] = (r * Σ^2 + (a^4 * sin(θ)^2 * cos(θ)^2 - r^2*(Σ + r^2 + a^2))) / (Σ^2 * Δ)
-    Γ[4, 4, 2] = Γ[4, 2, 4]
-
-    Γ[2, 4, 4] = (Δ * sin(θ)^2 / (Σ^3)) * (- r * Σ^2 + a^2 * sin(θ)^2 * (r^2 - a^2 * cos(θ)^2))
-
-    Γ[3, 4, 4] = (- sin(θ) * cos(θ) / Σ^3) * (A * Σ + (r^2 + a^2) * 2 * a^2 * r * sin(θ)^2 )
 
     return Γ
 end
@@ -193,13 +191,13 @@ for i in 1:length(sol)
     r = x[2]
     θ = x[3]
 
-    # Compute the metric components at the current position
-    g = metric(r, θ)
-    g_tt = g[1,1]
-    g_tϕ = g[1,4]
-    g_rr = g[2,2]
-    g_θθ = g[3,3]
-    g_ϕϕ = g[4,4]
+    # # Compute the metric components at the current position
+    # g = metric(r, θ)
+    # g_tt = g[1,1]
+    # g_tϕ = g[1,4]
+    # g_rr = g[2,2]
+    # g_θθ = g[3,3]
+    # g_ϕϕ = g[4,4]
 
 
     # # Compute conserved quantities
