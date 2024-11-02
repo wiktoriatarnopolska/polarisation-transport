@@ -5,8 +5,7 @@ M = 1.0
 a = 0.0  # Schwarzschild spacetime (non-rotating black hole)
 
 # Initial conditions
-#r0 = 10.0       # Initial radial distance
-r0 = 100.0
+r0 = 100.0       # Initial radial distance
 θ0 = π / 2      # Equatorial plane
 ϕ0 = 0.0        # Initial azimuthal angle
 λ0 = 0.0        # Initial affine parameter
@@ -29,9 +28,9 @@ function metric(r, θ)
 end
 
 # Set initial velocity components (adjust these values as desired)
-v_r = 0.0    # Radial velocity (negative for inward motion)
+v_r = - 1.0    # Radial velocity (negative for inward motion)
 v_θ = 0.0     # Polar velocity
-v_ϕ = 0.3     # Azimuthal (angular) velocity
+v_ϕ = 0.0     # Azimuthal (angular) velocity
 
 # Compute the metric at the initial position
 g0 = metric(r0, θ0)
@@ -56,28 +55,25 @@ println("Null normalization check: ", norm)  # Should be close to 0
 # Combine position and velocity into initial condition vector (8 elements)
 u0 = [λ0, r0, θ0, ϕ0, v[1], v[2], v[3], v[4]]
 
-# Event horizon radius for the Schwarzschild metric
-r_horizon = 2
+# Event horizon radius 
+r_horizon = 1 + sqrt(1 - a^2)
 
 # Analytical Christoffel symbols for Schwarzschild metric
 function compute_christoffel_analytical(r, θ)
-    M = 1.0
+
     Γ = zeros(4, 4, 4)
 
-    # Precompute common terms
-    f = 1 - 2 * M / r
-
     # Non-zero Christoffel symbols
-    Γ[1,2,1] = 1 / r * (r - 2)
+    Γ[1,2,1] = 1 / (r * (r - 2))
     Γ[1,1,2] = Γ[1,2,1]  # Symmetry in lower indices
 
-    Γ[2,1,1] = f / r^2
+    Γ[2,1,1] = (1 - 2 / r) / r^2
 
-    Γ[2,2,2] = - 1 / (r^2 * f)
+    Γ[2,2,2] = - 1 / (r^2 * (1 - 2 / r))
 
-    Γ[2,3,3] = -r * f
+    Γ[2,3,3] = -r * (1 - 2 / r)
 
-    Γ[2,4,4] = -r * f * sin(θ)^2
+    Γ[2,4,4] = -r * (1 - 2 / r) * sin(θ)^2
 
     Γ[3,2,3] = 1 / r
     Γ[3,3,2] = Γ[3,2,3]  # Symmetry
@@ -134,7 +130,7 @@ tspan = (0.0, 1000.0)
 
 # Solve the ODE using in-place form
 prob = ODEProblem(intprob!, u0, tspan)
-sol = solve(prob, Tsit5(), abstol=1e-14, reltol=1e-14, dtmax=0.01)
+sol = solve(prob, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=0.01)
 
 # Initialize arrays to store conserved quantities
 # E_vals = []

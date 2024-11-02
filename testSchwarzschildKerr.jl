@@ -10,8 +10,8 @@ end
 Schwarzschild.g0
 Kerr.g0
 
-gammaKerr = Kerr.compute_christoffel_analytical(100.0, deg2rad(90))
-gammaSchwarz = Schwarzschild.compute_christoffel_analytical(100.0, deg2rad(90))
+gammaKerr = Kerr.compute_christoffel_analytical(10, deg2rad(90))
+gammaSchwarz = Schwarzschild.compute_christoffel_analytical(10, deg2rad(90))
 
 gammaKerr[1, 1, 2]
 gammaSchwarz[1, 1, 2]

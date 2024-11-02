@@ -3,7 +3,7 @@ using Roots
 
 # Constants
 M = 1.0
-a = 0.998  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
+a = 0.0  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
 
 # Initial conditions
 r0 = 100.0
@@ -89,7 +89,7 @@ function compute_christoffel_analytical(r, θ)
     Γ[1, 1, 3] = - 2 * a^2* r * sin(θ) * cos(θ) / Σ^2
     Γ[1, 3, 1] = Γ[1, 1, 3]
 
-    Γ[2,1,1] = Δ * (r^2 + a^2 * cos(θ)^2) / (Σ^3)
+    Γ[2,1,1] = Δ * (r^2 - a^2 * cos(θ)^2) / (Σ^3)
 
     Γ[2, 1, 4] = - Δ * a * sin(θ)^2 * f / Σ^3
     Γ[2, 4, 1] = Γ[2, 1, 4]
@@ -106,7 +106,7 @@ function compute_christoffel_analytical(r, θ)
     Γ[3, 2, 3] = r / Σ
     Γ[3, 3, 2] = Γ[3, 2, 3]
 
-    Γ[3, 4, 4] = (- sin(θ) * cos(θ) / Σ^3) * (A * Σ + (r^2 + a^2) * 2 * a^2 * r * sin(θ)^2 )
+    Γ[3, 4, 4] = (- sin(θ) * cos(θ) / (Σ^3)) * (A * Σ + (r^2 + a^2) * 2 * a^2 * r * sin(θ)^2 )
 
     Γ[4, 2, 4] = (r * Σ^2 + (a^4 * sin(θ)^2 * cos(θ)^2 - r^2*(Σ + r^2 + a^2))) / (Σ^2 * Δ)
     Γ[4, 4, 2] = Γ[4, 2, 4]
@@ -176,7 +176,7 @@ function intprob!(du, u, p, λ)
 end
 
 # Set up and solve the ODE problem
-tspan = (0.0, 1000.0)
+tspan = (0.0, 1100.0)
 prob = ODEProblem(intprob!, u0, tspan)
 sol = @time solve(prob, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=0.01)
 #sol = @time solve(prob, ESERK5(), atol=1e-16, reltol = 1e-16, dt = 0.01)
@@ -220,7 +220,7 @@ pl = plot(
     legend = true,
     proj = :polar,
     color = :black,
-    ylim=(0.0, 15),
+    ylim=(0.0, 5),
     label="Event Horizon"
 )
 
