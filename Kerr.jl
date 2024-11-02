@@ -3,7 +3,7 @@ using Roots
 
 # Constants
 M = 1.0
-a = 0.0  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
+a = 0.9  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
 
 # Initial conditions
 r0 = 100.0
@@ -79,7 +79,7 @@ function compute_christoffel_analytical(r, θ)
     Σ = r^2 + a^2 * cos(θ)^2
     Γ = zeros(4, 4, 4)
     #f = r^2 - a^2 * cos(θ)^2
-    f = 1 - 2 / r
+    #f = 1 - 2 / r
 
     A = (r^2 + a^2) * Σ + 2 * a^2 * r * sin(θ)^2
 
@@ -91,7 +91,7 @@ function compute_christoffel_analytical(r, θ)
 
     Γ[2,1,1] = Δ * (r^2 - a^2 * cos(θ)^2) / (Σ^3)
 
-    Γ[2, 1, 4] = - Δ * a * sin(θ)^2 * f / Σ^3
+    Γ[2, 1, 4] = - Δ * a * sin(θ)^2 * (r^2 - a^2 * cos(θ)^2) / Σ^3
     Γ[2, 4, 1] = Γ[2, 1, 4]
 
     Γ[2, 2, 2] = (r * a^2 * sin(θ)^2 - (r^2 - a^2 * cos(θ)^2)) / (Σ * Δ)
@@ -116,7 +116,7 @@ function compute_christoffel_analytical(r, θ)
 
     Γ[3, 1, 1] = - 2 * a^2 * r * sin(θ) * cos(θ) / Σ^3
 
-    Γ[4, 1, 2] = a * f / (Σ^2 * Δ)
+    Γ[4, 1, 2] = a * (r^2 - a^2 * cos(θ)^2) / (Σ^2 * Δ)
     Γ[4, 2, 1] = Γ[4, 1, 2]
 
     Γ[4, 1, 3] = - 2 * a * r * (cos(θ) / sin(θ)) / Σ^2
@@ -212,16 +212,20 @@ end
 r_vals = [sol[i][2] for i in 1:length(sol)]
 ϕ_vals = [sol[i][4] for i in 1:length(sol)]
 
-# Plot the geodesic path and event horizon for Kerr metric
+# First plot the photon path, then overlay the event horizon
 pl = plot(
+    ϕ_vals, r_vals,
+    lw = 2,
+    label = "Photon Path",
+    color = :blue,
+    proj = :polar,
+    ylim = (0.0, 15),
+)
+
+plot!(
     θ -> r_horizon,
     0:0.01:2π,
     lw = 2,
-    legend = true,
-    proj = :polar,
-    color = :black,
-    ylim=(0.0, 5),
-    label="Event Horizon"
+    label = "Event Horizon",
+    color = :black
 )
-
-plot!(ϕ_vals, r_vals, lw=2, label="Photon Path", color=:blue)

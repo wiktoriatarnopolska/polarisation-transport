@@ -165,20 +165,23 @@ end
 r_vals = [sol[i][2] for i in 1:length(sol)]
 ϕ_vals = [sol[i][4] for i in 1:length(sol)]
 
-# Plot the geodesic path
+# First plot the photon path, then overlay the event horizon
 pl = plot(
-    θ -> r_horizon,  # Event horizon radius for Schwarzschild
-    0:0.01:2π,
+    ϕ_vals, r_vals,
     lw = 2,
-    legend = true,
+    label = "Photon Path",
+    color = :blue,
     proj = :polar,
-    color = :black,
-    ylim=(0.0, 15),
-    label="Event Horizon"
+    ylim = (0.0, 15),
 )
 
-plot!(ϕ_vals, r_vals, lw=2, label="Photon Path", color=:blue)
-
+plot!(
+    θ -> r_horizon,
+    0:0.01:2π,
+    lw = 2,
+    label = "Event Horizon",
+    color = :black
+)
 
 # # Extract affine parameter values
 # λ_vals = sol.t
