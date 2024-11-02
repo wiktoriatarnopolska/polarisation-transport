@@ -5,7 +5,7 @@ M = 1.0
 a = 0.0  # Schwarzschild spacetime (non-rotating black hole)
 
 # Initial conditions
-r0 = 100.0       # Initial radial distance
+r0 = 3.0       # Initial radial distance
 θ0 = π / 2      # Equatorial plane
 ϕ0 = 0.0        # Initial azimuthal angle
 λ0 = 0.0        # Initial affine parameter
@@ -28,9 +28,9 @@ function metric(r, θ)
 end
 
 # Set initial velocity components (adjust these values as desired)
-v_r = - 1.0    # Radial velocity (negative for inward motion)
+v_r = 0.0    # Radial velocity (negative for inward motion)
 v_θ = 0.0     # Polar velocity
-v_ϕ = 0.0     # Azimuthal (angular) velocity
+v_ϕ = 0.3     # Azimuthal (angular) velocity
 
 # Compute the metric at the initial position
 g0 = metric(r0, θ0)
