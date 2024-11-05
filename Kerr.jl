@@ -3,7 +3,7 @@ using Roots
 
 # Constants
 M = 1.0
-a = 0.9  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
+a = 0.998  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
 
 # Initial conditions
 r0 = 100.0
@@ -176,13 +176,13 @@ function intprob!(du, u, p, λ)
 end
 
 # Set up and solve the ODE problem
-tspan = (0.0, 1100.0)
+tspan = (0.0, 1000.0)
 prob = ODEProblem(intprob!, u0, tspan)
 sol = @time solve(prob, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=0.01)
-#sol = @time solve(prob, ESERK5(), atol=1e-16, reltol = 1e-16, dt = 0.01)
-# # Initialize arrays to store conserved quantities
-# E_vals = []
-# L_vals = []
+
+# Initialize arrays to store conserved quantities
+E_vals = []
+L_vals = []
 
 for i in 1:length(sol)
     x = sol[i][1:4]
@@ -191,21 +191,21 @@ for i in 1:length(sol)
     r = x[2]
     θ = x[3]
 
-    # # Compute the metric components at the current position
-    # g = metric(r, θ)
-    # g_tt = g[1,1]
-    # g_tϕ = g[1,4]
-    # g_rr = g[2,2]
-    # g_θθ = g[3,3]
-    # g_ϕϕ = g[4,4]
+    # Compute the metric components at the current position
+    g = metric(r, θ)
+    g_tt = g[1,1]
+    g_tϕ = g[1,4]
+    g_rr = g[2,2]
+    g_θθ = g[3,3]
+    g_ϕϕ = g[4,4]
 
 
-    # # Compute conserved quantities
-    # E = -g_tt * v[1]  # Energy-like quantity
-    # L = g_ϕϕ * v[4]   # Angular momentum-like quantity
+    # Compute conserved quantities
+    E = -g_tt * v[1] - g_tϕ * v[4] # Energy-like quantity
+    L = g_tϕ * v[1] + g_ϕϕ * v[4]  # Angular momentum-like quantity
 
-    # push!(E_vals, E)
-    # push!(L_vals, L)
+    push!(E_vals, E)
+    push!(L_vals, L)
 end
 
 # Extract radial and azimuthal values for plotting
@@ -220,6 +220,7 @@ pl = plot(
     color = :blue,
     proj = :polar,
     ylim = (0.0, 15),
+    title = "Photon Path in Spherical Coordinates"
 )
 
 plot!(
@@ -229,3 +230,43 @@ plot!(
     label = "Event Horizon",
     color = :black
 )
+
+# Convert polar coordinates to Cartesian coordinates
+x_vals = [r * cos(ϕ) for (r, ϕ) in zip(r_vals, ϕ_vals)]
+y_vals = [r * sin(ϕ) for (r, ϕ) in zip(r_vals, ϕ_vals)]
+
+# Plot the photon path in Cartesian coordinates
+pl_cartesian = plot(
+    x_vals, y_vals,
+    lw = 2,
+    label = "Photon Path",
+    color = :blue,
+    xlabel = "x",
+    ylabel = "y",
+    aspect_ratio = :equal,
+    title = "Photon Path in Cartesian Coordinates",
+    xlim = (-10, 10)
+)
+
+# Overlay event horizon in Cartesian coordinates
+circle_x = [r_horizon * cos(θ) for θ in 0:0.01:2π]
+circle_y = [r_horizon * sin(θ) for θ in 0:0.01:2π]
+
+plot!(
+    pl_cartesian,
+    circle_x, circle_y,
+    lw = 2,
+    label = "Event Horizon",
+    color = :black
+)
+
+# Display both plots
+plot(pl, pl_cartesian, layout = (1, 2), size = (1200, 600))
+
+# Extract affine parameter values
+λ_vals = sol.t
+
+# Plot Energy-like and Momentum-like Quantity
+plot(λ_vals, L_vals, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
+plot(λ_vals, E_vals, xlabel="Affine Parameter λ", ylabel="Energy-like Quantity E", label="E(λ)", legend=:bottomright, colour =:red)
+plot!(λ_vals, L_vals, title = "Conservation of E and L", xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
