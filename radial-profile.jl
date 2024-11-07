@@ -59,9 +59,11 @@ vline!([isco2], linestyle=:dash, color=:green, label = "ISCO")
 # Plotting the radial profile with logarithmic scaling
 plot(radii, profiles, xlabel="Radius (r_g)", ylabel="Temperature (K)", 
      title="Novikov-Thorne Radial Profile", xscale=:log10, yscale=:log10, label = "a = 0.998", colour=:red)
- plot!(radii1, profiles1, label = "a = 0.0", colour=:blue)
+plot!(radii1, profiles1, label = "a = 0.0", color=:blue)
+plot!(radii2, profiles2, label = "a = 0.9", color=:green)
 # Marking the ISCO on the plot
  vline!([isco], label="ISCO", linestyle=:dash, color=:red)
  vline!([isco1], label="ISCO", linestyle=:dash, color=:blue)
+ vline!([isco2], label="ISCO", linestyle=:dash, color=:green)
 # savefig("radial_profile_logscale.png")
 
