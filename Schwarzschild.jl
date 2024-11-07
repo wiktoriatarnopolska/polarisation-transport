@@ -5,7 +5,7 @@ M = 1.0
 a = 0.0  # Schwarzschild spacetime (non-rotating black hole)
 
 # Initial conditions
-r0 = 100.0       # Initial radial distance
+r0 = 1000.0       # Initial radial distance
 θ0 = π / 2      # Equatorial plane
 ϕ0 = 0.0        # Initial azimuthal angle
 λ0 = 0.0        # Initial affine parameter
@@ -215,7 +215,7 @@ plot!(
 
 # Display both plots
 plot(pl, pl_cartesian, layout = (1, 2), size = (1200, 600))
-
+savefig("Schwarzschild.png")
 # Extract affine parameter values
 λ_vals = sol.t
 
@@ -223,3 +223,4 @@ plot(pl, pl_cartesian, layout = (1, 2), size = (1200, 600))
 plot(λ_vals, L_vals, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
 plot(λ_vals, E_vals, xlabel="Affine Parameter λ", ylabel="Energy-like Quantity E", label="E(λ)", legend=:bottomright, colour =:red)
 plot!(λ_vals, L_vals, title = "Conservation of E and L", xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue )
+

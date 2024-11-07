@@ -6,7 +6,7 @@ M = 1.0
 a = 0.998  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
 
 # Initial conditions
-r0 = 100.0
+r0 = 1000.0
 θ0 = π / 2
 ϕ0 = 0.0
 λ0 = 0.0
@@ -45,6 +45,8 @@ g_tϕ = g0[1,4]
 g_rr = g0[2,2]
 g_θθ = g0[3,3]
 g_ϕϕ = g0[4,4]
+
+r0^2 * sin(θ0)^2
 
 # Compute coefficients for quadratic equation in v_t
 A = g_tt
@@ -262,6 +264,7 @@ plot!(
 
 # Display both plots
 plot(pl, pl_cartesian, layout = (1, 2), size = (1200, 600))
+savefig("Kerr.png")
 
 # Extract affine parameter values
 λ_vals = sol.t
