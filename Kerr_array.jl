@@ -33,6 +33,8 @@ function compute_christoffel_analytical(r, θ)
     Δ = r^2 - 2 * r + a^2
     Σ = r^2 + a^2 * cos(θ)^2
     Γ = zeros(4, 4, 4)
+    #f = r^2 - a^2 * cos(θ)^2
+    #f = 1 - 2 / r
 
     A = (r^2 + a^2) * Σ + 2 * a^2 * r * sin(θ)^2
 
@@ -142,7 +144,6 @@ b_values = collect(-10.0:1:10.0)
 x_vals_all = []
 y_vals_all = []
 
-# Arrays for plotting conserved quantities
 λ_vals_all = []
 E_vals_all = []
 L_vals_all = []
@@ -252,7 +253,6 @@ for b in b_values
 
 end
 
-
 # Initialize the plot
 pl_cartesian = plot(
     xlabel = "x",
@@ -289,9 +289,9 @@ display(pl_cartesian)
 pl_conserved = plot(
     xlabel="Affine Parameter λ",
     ylabel="Quantity",
-    title="Conserved Quantities (E and L)",
+    title="E and L conservation",
     legend=:outerright,
-    legendfontsize = 5
+    legendfontsize=5
 )
 
 # Loop through each trajectory and plot
@@ -321,4 +321,3 @@ end
 
 # Display the plot
 display(pl_conserved)
-
