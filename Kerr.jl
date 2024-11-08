@@ -3,10 +3,10 @@ using Roots
 
 # Constants
 M = 1.0
-a = 0.0  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
+a = 0.9  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
 
 # Initial conditions
-r0 = 3.0
+r0 = 1000.0
 θ0 = π / 2
 ϕ0 = 0.0
 λ0 = 0.0
@@ -185,6 +185,7 @@ sol = @time solve(prob, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=0.01)
 # Initialize arrays to store conserved quantities
 E_vals = []
 L_vals = []
+Q_vals = []
 
 for i in 1:length(sol)
     x = sol[i][1:4]
@@ -205,9 +206,11 @@ for i in 1:length(sol)
     # Compute conserved quantities
     E = -g_tt * v[1] - g_tϕ * v[4] # Energy-like quantity
     L = g_tϕ * v[1] + g_ϕϕ * v[4]  # Angular momentum-like quantity
+    Q = (g_θθ * v[3])^2 + cos(θ)^2 * ( - a^2 * (g_tt * v[1])^2 + (g_ϕϕ * v[4] + g_tϕ * v[1])^2 / sin(θ)^2)
 
     push!(E_vals, E)
     push!(L_vals, L)
+    push!(Q_vals, Q)
 end
 
 # Extract radial and azimuthal values for plotting
@@ -264,12 +267,67 @@ plot!(
 
 # Display both plots
 plot(pl, pl_cartesian, layout = (1, 2), size = (1200, 600))
-savefig("Kerr.png")
 
 # Extract affine parameter values
 λ_vals = sol.t
 
 # Plot Energy-like and Momentum-like Quantity
-plot(λ_vals, L_vals, xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue)
-plot(λ_vals, E_vals, xlabel="Affine Parameter λ", ylabel="Energy-like Quantity E", label="E(λ)", legend=:bottomright, colour =:red)
-plot!(λ_vals, L_vals, title = "Conservation of E and L", xlabel="Affine Parameter λ", ylabel="Angular Momentum-like Quantity L", label="L(λ)", colour =:blue)
+plot(
+    λ_vals, 
+    E_vals, 
+    xlabel="Affine Parameter λ", 
+    ylabel="Energy-like Quantity E", 
+    label="E(λ)", 
+    legend=:outerbottom, 
+    colour =:red,
+    lw =1.5
+    )
+plot(
+    λ_vals, 
+    L_vals, 
+    xlabel="Affine Parameter λ", 
+    ylabel="Momentum-like Quantity L", 
+    label="L(λ)", 
+    legend=:outerbottom, 
+    colour =:blue,
+    lw=1.5
+    )
+plot(
+    λ_vals, 
+    Q_vals, 
+    xlabel="Affine Parameter λ", 
+    ylabel="Carter Constant Q", 
+    label="Q(λ)", 
+    legend=:outerbottom, 
+    colour =:green,
+    lw = 1.5
+    )
+
+
+
+plot(
+    λ_vals, 
+    E_vals, 
+    xlabel="Affine Parameter λ", 
+    ylabel="Energy-like Quantity E", 
+    label="E(λ)", 
+    legend=:outerbottom, 
+    colour =:red,
+    lw=1.5
+    )
+plot!(
+    λ_vals, 
+    L_vals, 
+    title = "Conservation of Q, E and L", 
+    xlabel="Affine Parameter λ", 
+    ylabel="Angular Momentum-like Quantity L", 
+    label="L(λ)", 
+    colour =:blue,
+    lw=1.5
+    )
+plot!(
+    λ_vals, 
+    Q_vals, 
+    label = "Q(λ)",
+    lw=1.5)
+savefig("conservations_a=0.0_r=0.3.png")

@@ -2,7 +2,7 @@ using LinearAlgebra, DifferentialEquations, Plots
 
 # Constants
 M = 1.0  # Mass of the black hole
-a = 0.0
+a = 0.9
 
 # Event horizon radius
 r_horizon = 1 + sqrt(1 - a^2)
@@ -147,6 +147,7 @@ y_vals_all = []
 λ_vals_all = []
 E_vals_all = []
 L_vals_all = []
+Q_vals_all = []
 
 for b in b_values
     # Compute initial position in Cartesian coordinates
@@ -225,15 +226,29 @@ for b in b_values
     prob = ODEProblem(intprob!, u0, tspan)
     sol = solve(prob, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=1.0)
 
+    # Extract positions
+    r_vals = [sol[i][2] for i in 1:length(sol)]
+    θ_vals = [sol[i][3] for i in 1:length(sol)]
+    ϕ_vals = [sol[i][4] for i in 1:length(sol)]
+
+    # Convert to Cartesian coordinates
+    x_vals = [r * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+    y_vals = [r * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+
+    # Append trajectories to the arrays
+    push!(x_vals_all, x_vals)
+    push!(y_vals_all, y_vals)
+
     # Extract conserved quantities for each step
     λ_vals = sol.t
     E_vals = Float64[]
     L_vals = Float64[]
+    Q_vals = Float64[]
     
     for i in 1:length(sol)
         x = sol[i][1:4]  # Position
         v = sol[i][5:8]  # Velocity
-        r, θ = x[2], x[3]
+        r, θ, ϕ = x[2], x[3], x[4]
 
         g = metric(r, θ)  # Metric at current position
         g_tt, g_tϕ, g_rr, g_θθ, g_ϕϕ = g[1, 1], g[1, 4], g[2, 2], g[3, 3], g[4, 4]
@@ -241,15 +256,18 @@ for b in b_values
         # Compute conserved quantities
         E = -g_tt * v[1] - g_tϕ * v[4]
         L = g_tϕ * v[1] + g_ϕϕ * v[4]
+        Q = (g_θθ * v[3])^2 + cos(θ)^2 * ( - a^2 * (g_tt * v[1])^2 + (g_ϕϕ * v[4] + g_tϕ * v[1])^2 / sin(θ)^2)
 
         push!(E_vals, E)
         push!(L_vals, L)
+        push!(Q_vals, Q)
     end
 
     # Store the affine parameter and conserved quantities for this trajectory
     push!(λ_vals_all, λ_vals)
     push!(E_vals_all, E_vals)
     push!(L_vals_all, L_vals)
+    push!(Q_vals_all, Q_vals)
 
 end
 
@@ -289,9 +307,9 @@ display(pl_cartesian)
 pl_conserved = plot(
     xlabel="Affine Parameter λ",
     ylabel="Quantity",
-    title="E and L conservation",
+    title="Q, E and L conservation",
     legend=:outerright,
-    legendfontsize=5
+    legendfontsize=3
 )
 
 # Loop through each trajectory and plot
@@ -299,6 +317,7 @@ for i in 1:length(b_values)
     λ_vals = λ_vals_all[i]
     E_vals = E_vals_all[i]
     L_vals = L_vals_all[i]
+    Q_vals = Q_vals_all[i]
 
     # Plot Energy-like quantity E(λ)
     plot!(
@@ -317,7 +336,17 @@ for i in 1:length(b_values)
         lw=1.5,
         color=:red
     )
+
+    # Plot Carter Constant Q(λ)
+    plot!(
+        pl_conserved,
+        λ_vals, Q_vals,
+        label="Q(λ) for b=$(b_values[i])",
+        lw=1.5,
+        color=:green
+    )
 end
 
 # Display the plot
 display(pl_conserved)
+savefig("conservations_a=0.9.png")
