@@ -349,4 +349,3 @@ end
 
 # Display the plot
 display(pl_conserved)
-savefig("conservations_a=0.9.png")
