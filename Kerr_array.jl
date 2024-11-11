@@ -89,7 +89,7 @@ function compute_christoffel_analytical(r, θ)
     Γ[1, 3, 4] = 2 * a^3 * r * sin(θ)^3 * cos(θ) / Σ^2
     Γ[1, 4, 3] = Γ[1, 3, 4]
 
-    Γ[1, 2, 4] = a * sin(θ)^2 * (a^2 * cos(θ)^2 *(a^2 - r^2) - r^2 * (a^2 + 3 * r^2)) / (Σ^2 * Δ)
+    Γ[1, 2, 4] = a * sin(θ)^2 * (a^2 * cos(θ)^2 * (a^2 - r^2) - r^2 * (a^2 + 3 * r^2)) / (Σ^2 * Δ)
     Γ[1, 4, 2] = Γ[1, 2, 4]
 
     return Γ
@@ -156,7 +156,10 @@ for b in b_values
     # Initial velocities in spherical coordinates
     v_r = -1.0                 # Photon moving inward
     v_θ = 0.0                  # Equatorial plane
-    v_ϕ = b / (r0^2)           # Angular velocity from impact parameter
+    v_ϕ = b / (r0^2)           # Angular velocity from impact parameter.
+                               # this ensures that the photon starts with 
+                               # an angular momentum corresponding to the 
+                               # impact parameter b at the initial large radius.
 
     # Compute the metric at the initial position
     g0 = metric(r0, θ0)
