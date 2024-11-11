@@ -4,6 +4,8 @@ using LinearAlgebra, DifferentialEquations, Plots
 M = 1.0  # Mass of the black hole
 a = 0.9
 
+observer = (1000.0, deg2rad(90), 0.0, 0.0)
+
 # Event horizon radius
 r_horizon = 1 + sqrt(1 - a^2)
 
@@ -132,11 +134,6 @@ end
 
 tspan = (0.0, 5000.0)
 
-# Observer position at large negative x
-x_observer = -1000.0  # Negative x-axis
-y_observer = 0.0
-z_observer = 0.0  # Equatorial plane
-
 # Define a range of impact parameters
 b_values = collect(-10.0:1:10.0)
 
@@ -151,75 +148,40 @@ Q_vals_all = []
 
 for b in b_values
     # Compute initial position in Cartesian coordinates
-    x0_cartesian = [x_observer, y_observer, z_observer]
+    r0 = observer[1]
+    θ0 = observer[2]
+    ϕ0 = observer[3]
+    λ0 = observer[4]
 
-    # Compute initial direction in Cartesian coordinates
-    α = atan(b / abs(x_observer))  # Angle with respect to x-axis
-    v_x = cos(α)
-    v_y = sin(α)
-    v_z = 0.0  # Equatorial plane
-
-    # Since x_observer is negative, photons move towards increasing x
-    v_x = abs(v_x)
-
-    # Normalize the spatial velocity components
-    v_magnitude = sqrt(v_x^2 + v_y^2 + v_z^2)
-    v_x /= v_magnitude
-    v_y /= v_magnitude
-
-    # Convert initial position to spherical coordinates
-    r0 = sqrt(x_observer^2 + y_observer^2 + z_observer^2)
-    θ0 = acos(z_observer / r0)
-    ϕ0 = atan(y_observer, x_observer)
-
-    # Convert initial velocities to spherical coordinates
-    # Compute basis vectors at initial position
-    sin_θ0 = sin(θ0)
-    cos_θ0 = cos(θ0)
-    sin_ϕ0 = sin(ϕ0)
-    cos_ϕ0 = cos(ϕ0)
-
-    e_r = [sin_θ0 * cos_ϕ0, sin_θ0 * sin_ϕ0, cos_θ0]
-    e_θ = [cos_θ0 * cos_ϕ0, cos_θ0 * sin_ϕ0, -sin_θ0]
-    e_ϕ = [-sin_ϕ0, cos_ϕ0, 0.0]
-
-    # Compute v_r, v_θ, v_ϕ
-    v_cartesian = [v_x, v_y, v_z]
-
-    v_r = dot(v_cartesian, e_r)
-    v_θ = dot(v_cartesian, e_θ) / r0
-    v_ϕ = dot(v_cartesian, e_ϕ) / (r0 * sin_θ0)
+    # Initial velocities in spherical coordinates
+    v_r = -1.0                 # Photon moving inward
+    v_θ = 0.0                  # Equatorial plane
+    v_ϕ = b / (r0^2)           # Angular velocity from impact parameter
 
     # Compute the metric at the initial position
     g0 = metric(r0, θ0)
-    # Extract metric components
     g_tt = g0[1,1]
     g_tϕ = g0[1,4]
     g_rr = g0[2,2]
     g_θθ = g0[3,3]
     g_ϕϕ = g0[4,4]
 
-    # Compute coefficients for quadratic equation in v_t
+    # Solve quadratic equation for v_t
     A = g_tt
     B = g_tϕ * v_ϕ
-    C = g_ϕϕ * v_ϕ^2 + g_rr * v_r^2 + g_θθ * v_θ^2
+    C = g_rr * v_r^2 + g_θθ * v_θ^2 + g_ϕϕ * v_ϕ^2
 
-    # Solve quadratic equation A * v_t^2 + 2 * B * v_t + C = 0
     Δ = (2 * B)^2 - 4 * A * C
     if Δ < 0
         error("No real solution for v_t. Check initial conditions.")
     end
 
-    v_t = (-2 * B - sqrt(Δ)) / (2 * A)  # Choose the negative root for future-directed motion
-
+    v_t = (-2 * B - sqrt(Δ)) / (2 * A)  # Negative root for future-directed motion
 
     # Complete the initial velocity vector
     v = [v_t; v_r; v_θ; v_ϕ]
 
-    # Initial affine parameter
-    λ0 = 0.0
-
-    # Combine position and velocity into initial condition vector
+    # Initial state vector
     u0 = [λ0, r0, θ0, ϕ0, v[1], v[2], v[3], v[4]]
 
     # Solve the ODE
@@ -235,7 +197,7 @@ for b in b_values
     x_vals = [r * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
     y_vals = [r * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
 
-    # Append trajectories to the arrays
+    # Append trajectories
     push!(x_vals_all, x_vals)
     push!(y_vals_all, y_vals)
 

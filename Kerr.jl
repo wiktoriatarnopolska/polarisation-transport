@@ -5,6 +5,7 @@ using Roots
 M = 1.0
 a = 0.9  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
 
+
 # Initial conditions
 r0 = 1000.0
 θ0 = π / 2
