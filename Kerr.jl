@@ -46,8 +46,6 @@ g_rr = g0[2,2]
 g_θθ = g0[3,3]
 g_ϕϕ = g0[4,4]
 
-r0^2 * sin(θ0)^2
-
 # Compute coefficients for quadratic equation in v_t
 A = g_tt
 B = g_tϕ * v_ϕ
