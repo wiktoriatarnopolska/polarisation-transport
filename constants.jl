@@ -15,4 +15,17 @@ M_dot = 10e19  # Accretion rate (kg/s)
 h = 4.135667696e-15  # Planck constant (eV·s)
 k_B = 8.617333262145e-5  # Boltzmann constant (eV/K)
 
-export G, c, sol_M, M_dot, h, k_B 
+# Parameters for Kerr black hole
+
+M = 10.0 * sol_M  # Mass of the black hole (kg)
+f_col = 1.8  # Hardening factor
+
+# redundant
+#gravitational_radius(r_g::Float64) = r_g
+#r_g = G * M / c^2  # Gravitational radius (meters)
+
+# Event horizon radius
+r_horizon = 1 + sqrt(1 - a^2)
+
+
+export G, c, sol_M, M_dot, h, k_B, M, f_col

@@ -4,15 +4,13 @@ using LinearAlgebra, DifferentialEquations, Plots
 M = 1.0  # Mass of the black hole
 a = 0.9
 
-observer = (1000.0, deg2rad(90), 0.0, 0.0)  # θ_obs = 60 degrees
-
-# Event horizon radius
-r_horizon = 1 + sqrt(1 - a^2)
+observer = (1000.0, deg2rad(60), 0.0, 0.0)
 
 function disc_hit_condition(u, t, integrator)
     r = u[2]
     θ = u[3]
     return abs(θ - π/2) < 1e-6 ? 0.0 : θ - π/2
+    #return abs(θ - π/2)
 end
 
 
@@ -68,13 +66,14 @@ end
 tspan = (0.0, 5000.0)
 
 # Define a range of impact parameters
-b_values = collect(-10.0:1:10.0)
+b_values = collect(-20.0:1:20.0)
 
 # Arrays to store trajectories
 x_vals_all = []
 y_vals_all = []
 
 # Disc parameters
+r_horizon = horizon(0.9)
 r_in = isco_radius(0.9)       # Inner radius of the disc
 r_out = 10.0                  # Outer radius of the disc
 N_r = 50                      # Radial grid points
@@ -92,7 +91,7 @@ for b in b_values
 
     # Initial velocities in spherical coordinates
     v_r = -1.0                 # Photon moving inward
-    v_θ = 0.1                  # Equatorial plane
+    v_θ = 0.0                  # Equatorial plane
     v_ϕ = b / (r0^2)           # Angular velocity from impact parameter.
 
     # Compute the metric at the initial position
@@ -122,7 +121,7 @@ for b in b_values
     u0 = [λ0, r0, θ0, ϕ0, v[1], v[2], v[3], v[4]]
 
     prob = ODEProblem(intprob!, u0, tspan)
-    sol = solve(prob, Tsit5(), callback=callback, abstol=1e-12, reltol=1e-12, dtmax=0.1)
+    sol = solve(prob, Tsit5(), callback=callback, abstol=1e-12, reltol=1e-12, dtmax=1.0)
 
     # Extract positions and times
     t_vals = sol.t

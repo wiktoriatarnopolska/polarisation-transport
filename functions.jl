@@ -118,4 +118,9 @@ function metric(r, θ)
     return g
 end
 
-export isco_radius, novikov_thorne_profile, compute_christoffel_analytical, metric
+function horizon(a)
+    r_horizon = 1 + sqrt(1 - a^2)
+    return r_horizon
+end
+
+export isco_radius, novikov_thorne_profile, compute_christoffel_analytical, metric, horizon
