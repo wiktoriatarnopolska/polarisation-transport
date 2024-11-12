@@ -269,48 +269,72 @@ plot!(
 # Display the plot
 display(pl_cartesian)
 
-pl_conserved = plot(
+pl_Econserved = plot(
     xlabel="Affine Parameter λ",
-    ylabel="Quantity",
-    title="Q, E and L conservation",
+    ylabel="|ΔE| (log scale)",
+    title="Energy Difference |E₀ - E(λ)|",
     legend=:outerright,
-    legendfontsize=3
+    yscale=:log10,
 )
 
-# Loop through each trajectory and plot
 for i in 1:length(b_values)
     λ_vals = λ_vals_all[i]
-    E_vals = E_vals_all[i]
-    L_vals = L_vals_all[i]
-    Q_vals = Q_vals_all[i]
+    abs_E_diff = abs.(E_vals_all[i] .- E_vals_all[i][1])
+    abs_E_diff[abs_E_diff .== 0] .= 1e-10  # Replace zeros with small values
 
-    # Plot Energy-like quantity E(λ)
     plot!(
-        pl_conserved,
-        λ_vals, E_vals,
-        label="E(λ) for b=$(b_values[i])",
-        lw=1.5,
-        color=:blue
-    )
-
-    # Plot Angular Momentum-like quantity L(λ)
-    plot!(
-        pl_conserved,
-        λ_vals, L_vals,
-        label="L(λ) for b=$(b_values[i])",
-        lw=1.5,
-        color=:red
-    )
-
-    # Plot Carter Constant Q(λ)
-    plot!(
-        pl_conserved,
-        λ_vals, Q_vals,
-        label="Q(λ) for b=$(b_values[i])",
-        lw=1.5,
-        color=:green
+        pl_Econserved,
+        λ_vals, abs_E_diff,
+        label="|ΔE| for b=$(b_values[i])",
+        lw=1.5
     )
 end
 
-# Display the plot
-display(pl_conserved)
+display(pl_Econserved)
+
+
+pl_Lconserved = plot(
+    xlabel="Affine Parameter λ",
+    ylabel="|ΔL| (log scale)",
+    title="Momentum Difference |L₀ - L(λ)|",
+    legend=:outerright,
+    yscale=:log10,
+)
+
+for i in 1:length(b_values)
+    λ_vals = λ_vals_all[i]
+    abs_L_diff = abs.(L_vals_all[i] .- L_vals_all[i][1])
+    abs_L_diff[abs_L_diff .== 0] .= 1e-10  # Replace zeros with small values
+
+    plot!(
+        pl_Lconserved,
+        λ_vals, abs_L_diff,
+        label="|ΔL| for b=$(b_values[i])",
+        lw=1.5
+    )
+end
+
+display(pl_Lconserved)
+
+pl_Qconserved = plot(
+    xlabel="Affine Parameter λ",
+    ylabel="|ΔQ| (log scale)",
+    title="Carter Const. Difference |Q₀ - Q(λ)|",
+    legend=:outerright,
+    yscale=:log10,
+)
+
+for i in 1:length(b_values)
+    λ_vals = λ_vals_all[i]
+    abs_Q_diff = abs.(Q_vals_all[i] .- Q_vals_all[i][1])
+    abs_Q_diff[abs_Q_diff .== 0] .= 1e-10  # Replace zeros with small values
+
+    plot!(
+        pl_Qconserved,
+        λ_vals, abs_Q_diff,
+        label="|ΔQ| for b=$(b_values[i])",
+        lw=1.5
+    )
+end
+
+display(pl_Qconserved)
