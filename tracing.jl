@@ -269,13 +269,13 @@ y_outer = [r_out * sin(θ) for θ in θ_values]
 pl_disc = plot(
     x_outer, y_outer,
     seriestype = :shape,
-    fillcolor = :lightblue,
-    linecolor = :blue,
+    fillcolor = :mediumorchid2,
+    linecolor = :rebeccapurple,
     aspect_ratio = :equal,
     xlabel = "x",
     ylabel = "y",
     title = "Disc Hits Visualization",
-    legend = false,
+    label = "Disc",
     xlim = (-20, 20),
     ylim = (-20, 20),
 )
@@ -285,14 +285,15 @@ plot!(
     x_inner, y_inner,
     seriestype = :shape,
     fillcolor = :white,
-    linecolor = :blue
+    linecolor = :rebeccapurple,
+    label = false
 )
 
 # Overlay the hit points
 scatter!(
     pl_disc,
     x_hits, y_hits,
-    color = :red,
+    color = :tan1,
     markerstrokecolor = :black,
     markersize = 6,
     label = "Disc Hits",
@@ -309,11 +310,32 @@ for i in 1:length(b_values)
             pl_disc,
             x_vals_all[i], y_vals_all[i],
             lw = 1.0,
-            linecolor = :gray,
+            linecolor = :lightsteelblue,
+            label = false
         )
     end
 end
 
+# Overlay the event horizon
+circle_x = [r_horizon * cos(θ) for θ in 0:0.01:2π]
+circle_y = [r_horizon * sin(θ) for θ in 0:0.01:2π]
+plot!(
+    circle_x, circle_y,
+    lw = 2,
+    color = :purple4,
+    label = "Event horizon"
+)
+
+# Overlay the ISCO
+isco_x = [r_in * cos(θ) for θ in 0:0.01:2π]
+isco_y = [r_in * sin(θ) for θ in 0:0.01:2π]
+plot!(
+    isco_x, isco_y,
+    lw = 2,
+    color = :mediumslateblue,
+    label = "ISCO"
+)
+
+
 # Display the plot
 display(pl_disc)
- 
