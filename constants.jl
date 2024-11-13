@@ -11,7 +11,7 @@ Planck_constant(h::Float64) = h
 G = 1
 c = 1
 sol_M = 1.989e+30  # Solar mass (kg)
-M_dot = 10e19  # Accretion rate (kg/s)
+M_dot = 9e17 * pi*10^7 / (2e33)  # M_dot / sol_M yr-1
 h = 4.135667696e-15  # Planck constant (eV·s)
 k_B = 8.617333262145e-5  # Boltzmann constant (eV/K)
 

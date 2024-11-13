@@ -22,14 +22,15 @@ function novikov_thorne_profile(r::Float64, isco::Float64,M::Float64, am::Float6
     f_ξa = (ξ^4 * (ξ^3 - 3 * ξ + 2 * am))^(-1) * 
     (
         ξ - ξ_ms - (3/2) * am * log(ξ / ξ_ms)
-        - (3 * (ξ_1 - am)^2 * (ξ_1 * (ξ_1 - ξ_2) * (ξ_1 - ξ_3))^(-1) * log((ξ - ξ_1) / (ξ_ms - ξ_2)))
+        - (3 * (ξ_1 - am)^2 * (ξ_1 * (ξ_1 - ξ_2) * (ξ_1 - ξ_3))^(-1) * log((ξ - ξ_1) / (ξ_ms - ξ_1)))
+        - (3 * (ξ_2 - am)^2 * (ξ_2 * (ξ_2 - ξ_1) * (ξ_2 - ξ_3))^(-1) * log((ξ - ξ_2) / (ξ_ms - ξ_2)))
         - (3 * (ξ_3 - am)^2 * (ξ_3 * (ξ_3 - ξ_1) * (ξ_3 - ξ_2))^(-1) * log((ξ - ξ_3) / (ξ_ms - ξ_3)))
     )
 
-    T_amr = 741 * f_col * (M / sol_M)^(-1/2) * (M_dot / sol_M)^(1/4) * (f_ξa)^(1/4) # keV
-    T_K = T_amr * 1e3 / k_B
+    T_amr = 741 * f_col * (M / sol_M)^(-1/2) * (M_dot)^(1/4) * (f_ξa)^(1/4) # keV
+    #T_K = T_amr * 1e3 / k_B
     
-    return T_K
+    return T_amr
 end
 
 # Compute the Kerr Christoffel symbols analytically
@@ -123,4 +124,26 @@ function horizon(a)
     return r_horizon
 end
 
-export isco_radius, novikov_thorne_profile, compute_christoffel_analytical, metric, horizon
+function disc_hit_condition(u, t, integrator)
+    r = u[2]
+    θ = u[3]
+    return abs(θ - π/2) < 1e-6 ? 0.0 : θ - π/2
+    #return abs(θ - π/2)
+end
+
+function disc_hit_affect!(integrator)
+    r = integrator.u[2]
+    θ = integrator.u[3]
+    if r_in <= r <= r_out
+        println("Hit detected: r = $r, θ = $θ")
+        terminate!(integrator)
+    end
+end
+
+export isco_radius, 
+novikov_thorne_profile, 
+compute_christoffel_analytical, 
+metric, 
+horizon, 
+disc_hit_condition, 
+disc_hit_affect!

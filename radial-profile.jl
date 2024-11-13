@@ -16,7 +16,7 @@ radii = range(isco, stop=rout, length=100)  # Radii in units of r_g
 profiles = [novikov_thorne_profile(r, isco, M, am, M_dot, f_col) for r in radii]
 
 # Plotting the radial profile
-plot(radii, profiles, xlabel="Radius (r_g)", ylabel="Temperature (K)", title="Novikov-Thorne Radial Profile",
+plot(radii, profiles, xlabel="Radius (r_g)", ylabel="Temperature (keV)", title="Novikov-Thorne Radial Profile",
 label = " a = $am", color=:red)
 # Marking the ISCO on the plot
 vline!([isco], linestyle=:dash, color=:red, label = "ISCO")
@@ -57,7 +57,7 @@ vline!([isco2], linestyle=:dash, color=:green, label = "ISCO")
 
 ###### LOG SCALE ###################################################
 # Plotting the radial profile with logarithmic scaling
-plot(radii, profiles, xlabel="Radius (r_g)", ylabel="Temperature (K)", 
+plot(radii, profiles, xlabel="Radius (r_g)", ylabel="Temperature (keV)", 
      title="Novikov-Thorne Radial Profile", xscale=:log10, yscale=:log10, label = "a = 0.998", colour=:red)
 plot!(radii1, profiles1, label = "a = 0.0", color=:blue)
 plot!(radii2, profiles2, label = "a = 0.9", color=:green)

@@ -8,25 +8,17 @@ a = 0.9
 
 observer = (1000.0, deg2rad(60), 0.0, 0.0)
 
-function disc_hit_condition(u, t, integrator)
-    r = u[2]
-    θ = u[3]
-    return abs(θ - π/2) < 1e-6 ? 0.0 : θ - π/2
-    #return abs(θ - π/2)
-end
-
-
-function disc_hit_affect!(integrator)
-    r = integrator.u[2]
-    θ = integrator.u[3]
-    if r_in <= r <= r_out
-        println("Hit detected: r = $r, θ = $θ")
-        terminate!(integrator)
-    end
-end
-
 callback = ContinuousCallback(disc_hit_condition, disc_hit_affect!)
 
+tspan = (0.0, 5000.0)
+
+# Define a range of impact parameters
+b_values = collect(-10.0:1:10.0)
+
+# Disc parameters
+r_horizon = horizon(0.9)
+r_in = isco_radius(0.9)       # Inner radius of the disc
+r_out = 10.0                  # Outer radius of the disc
 
 # Define the ODE function using an in-place form
 function intprob!(du, u, p, λ)
@@ -65,21 +57,9 @@ function intprob!(du, u, p, λ)
     du[5:8] .= dv
 end
 
-tspan = (0.0, 5000.0)
-
-# Define a range of impact parameters
-b_values = collect(-20.0:1:20.0)
-
 # Arrays to store trajectories
 x_vals_all = []
 y_vals_all = []
-
-# Disc parameters
-r_horizon = horizon(0.9)
-r_in = isco_radius(0.9)       # Inner radius of the disc
-r_out = 10.0                  # Outer radius of the disc
-N_r = 50                      # Radial grid points
-N_φ = 50                      # Azimuthal grid points
 
 # Initialize array to store intersection points
 disc_hits = []
@@ -183,89 +163,90 @@ for (b, r_hit, ϕ_hit) in disc_hits
     println("Geodesic with impact parameter b = $b hits the disc at (r, ϕ) = ($r_hit, $ϕ_hit)")
 end
 
+# #### PLOTTING ################################################################################
 
-# Convert the disc hits to Cartesian coordinates
-x_hits = [r_hit * sin(π/2) * cos(ϕ_hit) for (_, r_hit, ϕ_hit) in disc_hits]
-y_hits = [r_hit * sin(π/2) * sin(ϕ_hit) for (_, r_hit, ϕ_hit) in disc_hits]
+# # Convert the disc hits to Cartesian coordinates
+# x_hits = [r_hit * sin(π/2) * cos(ϕ_hit) for (_, r_hit, ϕ_hit) in disc_hits]
+# y_hits = [r_hit * sin(π/2) * sin(ϕ_hit) for (_, r_hit, ϕ_hit) in disc_hits]
 
-# Plot the disc boundaries
-θ_values = range(0, 2π, length=500)
-x_inner = [r_in * cos(θ) for θ in θ_values]
-y_inner = [r_in * sin(θ) for θ in θ_values]
-x_outer = [r_out * cos(θ) for θ in θ_values]
-y_outer = [r_out * sin(θ) for θ in θ_values]
+# # Plot the disc boundaries
+# θ_values = range(0, 2π, length=500)
+# x_inner = [r_in * cos(θ) for θ in θ_values]
+# y_inner = [r_in * sin(θ) for θ in θ_values]
+# x_outer = [r_out * cos(θ) for θ in θ_values]
+# y_outer = [r_out * sin(θ) for θ in θ_values]
 
-# Initialize the plot
-pl_disc = plot(
-    x_outer, y_outer,
-    seriestype = :shape,
-    fillcolor = :mediumorchid2,
-    linecolor = :rebeccapurple,
-    aspect_ratio = :equal,
-    xlabel = "x",
-    ylabel = "y",
-    title = "Disc Hits Visualization",
-    label = "Disc",
-    xlim = (-20, 20),
-    ylim = (-20, 20),
-)
+# # Initialize the plot
+# pl_disc = plot(
+#     x_outer, y_outer,
+#     seriestype = :shape,
+#     fillcolor = :mediumorchid2,
+#     linecolor = :rebeccapurple,
+#     aspect_ratio = :equal,
+#     xlabel = "x",
+#     ylabel = "y",
+#     title = "Disc Hits Visualization",
+#     label = "Disc",
+#     xlim = (-20, 20),
+#     ylim = (-20, 20),
+# )
 
-# Fill the inner disc area
-plot!(
-    x_inner, y_inner,
-    seriestype = :shape,
-    fillcolor = :white,
-    linecolor = :rebeccapurple,
-    label = false
-)
+# # Fill the inner disc area
+# plot!(
+#     x_inner, y_inner,
+#     seriestype = :shape,
+#     fillcolor = :white,
+#     linecolor = :rebeccapurple,
+#     label = false
+# )
 
-# Overlay the hit points
-scatter!(
-    pl_disc,
-    x_hits, y_hits,
-    color = :tan1,
-    markerstrokecolor = :black,
-    markersize = 6,
-    label = "Disc Hits",
-)
+# # Overlay the hit points
+# scatter!(
+#     pl_disc,
+#     x_hits, y_hits,
+#     color = :tan1,
+#     markerstrokecolor = :black,
+#     markersize = 6,
+#     label = "Disc Hits",
+# )
 
-# Optionally, plot the geodesic paths that hit the disc
-for i in 1:length(b_values)
-    b = b_values[i]
-    # Check if this b corresponds to a disc hit
-    hit_indices = findall(x -> x[1] == b, disc_hits)
-    if !isempty(hit_indices)
-        # Plot the trajectory
-        plot!(
-            pl_disc,
-            x_vals_all[i], y_vals_all[i],
-            lw = 1.0,
-            linecolor = :lightsteelblue,
-            label = false
-        )
-    end
-end
+# # Optionally, plot the geodesic paths that hit the disc
+# for i in 1:length(b_values)
+#     b = b_values[i]
+#     # Check if this b corresponds to a disc hit
+#     hit_indices = findall(x -> x[1] == b, disc_hits)
+#     if !isempty(hit_indices)
+#         # Plot the trajectory
+#         plot!(
+#             pl_disc,
+#             x_vals_all[i], y_vals_all[i],
+#             lw = 1.0,
+#             linecolor = :lightsteelblue,
+#             label = false
+#         )
+#     end
+# end
 
-# Overlay the event horizon
-circle_x = [r_horizon * cos(θ) for θ in 0:0.01:2π]
-circle_y = [r_horizon * sin(θ) for θ in 0:0.01:2π]
-plot!(
-    circle_x, circle_y,
-    lw = 2,
-    color = :purple4,
-    label = "Event horizon"
-)
+# # Overlay the event horizon
+# circle_x = [r_horizon * cos(θ) for θ in 0:0.01:2π]
+# circle_y = [r_horizon * sin(θ) for θ in 0:0.01:2π]
+# plot!(
+#     circle_x, circle_y,
+#     lw = 2,
+#     color = :purple4,
+#     label = "Event horizon"
+# )
 
-# Overlay the ISCO
-isco_x = [r_in * cos(θ) for θ in 0:0.01:2π]
-isco_y = [r_in * sin(θ) for θ in 0:0.01:2π]
-plot!(
-    isco_x, isco_y,
-    lw = 2,
-    color = :mediumslateblue,
-    label = "ISCO"
-)
+# # Overlay the ISCO
+# isco_x = [r_in * cos(θ) for θ in 0:0.01:2π]
+# isco_y = [r_in * sin(θ) for θ in 0:0.01:2π]
+# plot!(
+#     isco_x, isco_y,
+#     lw = 2,
+#     color = :mediumslateblue,
+#     label = "ISCO"
+# )
 
 
-# Display the plot
-display(pl_disc)
+# # Display the plot
+# display(pl_disc)
