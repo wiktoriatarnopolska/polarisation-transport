@@ -1,99 +1,32 @@
-using LinearAlgebra, DifferentialEquations, Plots
+using LinearAlgebra
+using DifferentialEquations
+using Plots
 
 # Constants
 M = 1.0  # Mass of the black hole
 a = 0.9
 
-observer = (1000.0, deg2rad(60), 0.0, 0.0)  # θ_obs = 60 degrees
+observer = (1000.0, deg2rad(60), 0.0, 0.0)
 
-# Event horizon radius
-r_horizon = 1 + sqrt(1 - a^2)
-
-# Kerr Metric components as a function of r and θ
-function metric(r, θ)
-    Δ = r^2 - 2 * r + a^2
-    Σ = r^2 + a^2 * cos(θ)^2
-    f = 1 - 2 * M / r
-
-    g_tt = -(f * r^2 / Σ)
-    g_rr = 1/f
-    g_θθ = Σ
-    g_ϕϕ = (r^2 + a^2 + ((2 * M * r * a^2 * sin(θ)^2 )/ Σ)) * sin(θ)^2
-    g_tϕ = -2 * M * r * a * sin(θ)^2 / Σ
-
-    g = [
-        g_tt     0        0        g_tϕ;
-        0        g_rr     0        0;
-        0        0        g_θθ     0;
-        g_tϕ     0        0        g_ϕϕ
-    ]
-    return g
+function disc_hit_condition(u, t, integrator)
+    r = u[2]
+    θ = u[3]
+    return abs(θ - π/2) < 1e-6 ? 0.0 : θ - π/2
+    #return abs(θ - π/2)
 end
 
-# Compute the Kerr Christoffel symbols analytically
-function compute_christoffel_analytical(r, θ)
-    Δ = r^2 - 2 * r + a^2
-    Σ = r^2 + a^2 * cos(θ)^2
-    Γ = zeros(4, 4, 4)
-    #f = r^2 - a^2 * cos(θ)^2
-    #f = 1 - 2 / r
 
-    A = (r^2 + a^2) * Σ + 2 * a^2 * r * sin(θ)^2
-
-    Γ[1, 1, 2] = (r^2 + a^2) * (r^2 - a^2 * cos(θ)^2) / ((Σ^2) * Δ)
-    Γ[1, 2, 1] = Γ[1, 1, 2]
-
-    Γ[1, 1, 3] = - 2 * a^2* r * sin(θ) * cos(θ) / Σ^2
-    Γ[1, 3, 1] = Γ[1, 1, 3]
-
-    Γ[2,1,1] = Δ * (r^2 - a^2 * cos(θ)^2) / (Σ^3)
-
-    Γ[2, 1, 4] = - Δ * a * sin(θ)^2 * (r^2 - a^2 * cos(θ)^2) / Σ^3
-    Γ[2, 4, 1] = Γ[2, 1, 4]
-
-    Γ[2, 2, 2] = (r * a^2 * sin(θ)^2 - (r^2 - a^2 * cos(θ)^2)) / (Σ * Δ)
-
-    Γ[2, 2, 3] = - a^2 * sin(θ) * cos(θ) / Σ
-    Γ[2, 3, 2] = Γ[2, 2, 3]
-
-    Γ[2, 3, 3] = - r * Δ / Σ
-
-    Γ[2, 4, 4] = (Δ * sin(θ)^2 / (Σ^3)) * (- r * Σ^2 + a^2 * sin(θ)^2 * (r^2 - a^2 * cos(θ)^2))
-
-    Γ[3, 2, 3] = r / Σ
-    Γ[3, 3, 2] = Γ[3, 2, 3]
-
-    Γ[3, 4, 4] = (- sin(θ) * cos(θ) / (Σ^3)) * (A * Σ + (r^2 + a^2) * 2 * a^2 * r * sin(θ)^2 )
-
-    Γ[4, 2, 4] = (r * Σ^2 + (a^4 * sin(θ)^2 * cos(θ)^2 - r^2*(Σ + r^2 + a^2))) / (Σ^2 * Δ)
-    Γ[4, 4, 2] = Γ[4, 2, 4]
-
-    Γ[4, 3, 4] = ((cos(θ) / sin(θ)) / Σ^2) * (Σ^2 + 2 * a^2 * r * sin(θ)^2)
-    Γ[4, 4, 3] = Γ[4, 3, 4]
-
-    Γ[3, 1, 1] = - 2 * a^2 * r * sin(θ) * cos(θ) / Σ^3
-
-    Γ[4, 1, 2] = a * (r^2 - a^2 * cos(θ)^2) / (Σ^2 * Δ)
-    Γ[4, 2, 1] = Γ[4, 1, 2]
-
-    Γ[4, 1, 3] = - 2 * a * r * (cos(θ) / sin(θ)) / Σ^2
-    Γ[4, 3, 1] = Γ[4, 1, 3]
-
-    Γ[3, 1, 4] = 2 * a * r * (r^2 + a^2) * sin(θ) * cos(θ) / Σ^3
-    Γ[3, 4, 1] = Γ[3, 1, 4]
-
-    Γ[3, 2, 2] = a^2 * sin(θ) * cos(θ) / (Σ * Δ)
-
-    Γ[3, 3, 3] = - a^2 * sin(θ) * cos(θ) / Σ
-
-    Γ[1, 3, 4] = 2 * a^3 * r * sin(θ)^3 * cos(θ) / Σ^2
-    Γ[1, 4, 3] = Γ[1, 3, 4]
-
-    Γ[1, 2, 4] = a * sin(θ)^2 * (a^2 * cos(θ)^2 * (a^2 - r^2) - r^2 * (a^2 + 3 * r^2)) / (Σ^2 * Δ)
-    Γ[1, 4, 2] = Γ[1, 2, 4]
-
-    return Γ
+function disc_hit_affect!(integrator)
+    r = integrator.u[2]
+    θ = integrator.u[3]
+    if r_in <= r <= r_out
+        println("Hit detected: r = $r, θ = $θ")
+        terminate!(integrator)
+    end
 end
+
+callback = ContinuousCallback(disc_hit_condition, disc_hit_affect!)
+
 
 # Define the ODE function using an in-place form
 function intprob!(du, u, p, λ)
@@ -135,13 +68,14 @@ end
 tspan = (0.0, 5000.0)
 
 # Define a range of impact parameters
-b_values = collect(-10.0:1:10.0)
+b_values = collect(-20.0:1:20.0)
 
 # Arrays to store trajectories
 x_vals_all = []
 y_vals_all = []
 
 # Disc parameters
+r_horizon = horizon(0.9)
 r_in = isco_radius(0.9)       # Inner radius of the disc
 r_out = 10.0                  # Outer radius of the disc
 N_r = 50                      # Radial grid points
@@ -188,9 +122,8 @@ for b in b_values
     # Initial state vector
     u0 = [λ0, r0, θ0, ϕ0, v[1], v[2], v[3], v[4]]
 
-    # Solve the ODE
     prob = ODEProblem(intprob!, u0, tspan)
-    sol = solve(prob, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=1.0)
+    sol = solve(prob, Tsit5(), callback=callback, abstol=1e-12, reltol=1e-12, dtmax=1.0)
 
     # Extract positions and times
     t_vals = sol.t
@@ -244,9 +177,6 @@ for b in b_values
 end
 
 println("Number of disc hits: ", length(disc_hits))
-for i in 1:min(5, length(disc_hits))
-    println(disc_hits[i])
-end
 
 # Now you can use disc_hits to analyze or visualize the geodesics that hit the disc
 for (b, r_hit, ϕ_hit) in disc_hits

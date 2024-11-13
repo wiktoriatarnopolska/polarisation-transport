@@ -24,8 +24,7 @@ f_col = 1.8  # Hardening factor
 #gravitational_radius(r_g::Float64) = r_g
 #r_g = G * M / c^2  # Gravitational radius (meters)
 
-# Event horizon radius
-r_horizon = 1 + sqrt(1 - a^2)
+
 
 
 export G, c, sol_M, M_dot, h, k_B, M, f_col
