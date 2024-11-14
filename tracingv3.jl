@@ -34,7 +34,7 @@ L_vals_all = []
 Q_vals_all = []
 
 # Function to calculate energy (E), angular momentum (Lz), and Carter constant (Q)
-function calculate_conserved_quantities(g, p)
+function calculate_conserved_quantities(g, p, a)
     g_tt, g_tϕ, g_rr, g_θθ, g_ϕϕ = g[1, 1], g[1, 4], g[2, 2], g[3, 3], g[4, 4]
 
     # Extract momentum components
@@ -47,8 +47,7 @@ function calculate_conserved_quantities(g, p)
     L_z = g_tϕ * p_t + g_ϕϕ * p_ϕ
 
     # Calculate Carter Constant Q
-    Q = g_θθ * p_θ^2 + cos(θ)^2 * (a^2 * E^2 - L_z^2 / sin(θ)^2)
-
+    Q = (g_θθ * p_θ)^2 + cos(θ)^2 * ( - a^2 * (g_tt * p_t)^2 + (g_ϕϕ * p_ϕ + g_tϕ * p_t)^2 / sin(θ)^2)
     return E, L_z, Q
 end
 
@@ -107,7 +106,7 @@ for x in x_values
         g = metric(r, θ)
 
         # Calculate conserved quantities at current step
-        E, Lz, Q = calculate_conserved_quantities(g, p)
+        E, Lz, Q = calculate_conserved_quantities(g, p, a)
 
         # Store the values for plotting
         push!(E_vals, E)
