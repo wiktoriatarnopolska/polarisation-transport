@@ -135,7 +135,7 @@ function disc_hit_affect!(integrator)
     r = integrator.u[2]
     θ = integrator.u[3]
     if r_in <= r <= r_out
-        println("Hit detected: r = $r, θ = $θ")
+        #println("Hit detected: r = $r, θ = $θ")
         terminate!(integrator)
     end
 end

@@ -5,49 +5,36 @@ using Roots
 M = 1.0
 a = 0.9  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
 
+observer = (1000.0, deg2rad(90), 0.0, 0.0)
 
-# Initial conditions
-r0 = 1000.0
-θ0 = π / 2
-ϕ0 = 0.0
-λ0 = 0.0
+r0 = observer[1]
+θ0 = observer[2]
+ϕ0 = observer[3]
+λ0 = observer[4]
 
-# Set initial velocity components (adjust these values as desired)
-v_r = - 1.0    # Radial velocity (negative for inward motion)
-v_θ = 0.0     # Polar velocity
-v_ϕ = 0.0     # Azimuthal (angular) velocity
+# Example usage for transforming and solving for initial conditions
+x, y = 0.0, 0.0  # Example values for (x, y) in observer's image plane
+x_bh, y_bh, z_bh = transform_to_bh_coords(x, y, observer)
+r, θ, ϕ = to_boyer_lindquist(x_bh, y_bh, z_bh)
 
-g0 = metric(r0, θ0)
-# Extract metric components
-g_tt = g0[1,1]
-g_tϕ = g0[1,4]
-g_rr = g0[2,2]
-g_θθ = g0[3,3]
-g_ϕϕ = g0[4,4]
+Σ = r^2 + a^2 * cos(θ)^2
 
-# Compute coefficients for quadratic equation in v_t
-A = g_tt
-B = g_tϕ * v_ϕ
-C = g_ϕϕ * v_ϕ^2 + g_rr * v_r^2 + g_θθ * v_θ^2
+# Initial radial, theta, phi momentum components
+p_r = - (r * sqrt(r^2 + a^2) * sin(θ) * sin(θ0) * cos(ϕ - ϕ0) + (r^2 + a^2) * cos(θ) * cos(θ0))/ (Σ)
+p_θ = (r * sin(θ) * cos(θ0) - sqrt(r^2 + a^2) * cos(θ) * sin(θ0) * cos(ϕ-ϕ0))/(Σ)
+p_ϕ = (sin(θ0) * sin(ϕ-ϕ0))/(sqrt(r^2 + a^2) * sin(θ))
 
-# Solve quadratic equation A * v_t^2 + 2 * B * v_t + C = 0
-Δ = (2 * B)^2 - 4 * A * C
-if Δ < 0
-    error("No real solution for v_t. Check initial conditions.")
-end
+# Metric at the initial position
+g = metric(r, θ)
 
-v_t = (-2 * B - sqrt(Δ)) / (2 * A)  # Choose the negative root for future-directed motion
+# Solve for p^t
+p_t = solve_pt(g, p_r, p_θ, p_ϕ)
 
-# Complete the initial velocity vector
-v = [v_t; v_r; v_θ; v_ϕ]
+# Initial momentum vector
+p = [p_t, p_r, p_θ, p_ϕ]
 
-# Verify the normalization condition
-norm_ = g_tt * v[1]^2 + g_rr * v[2]^2 + g_θθ * v[3]^2 + g_ϕϕ * v[4]^2 +
-g_tϕ * v[1] * v[4]
-println("Null normalization check: ", norm_)  # Should be close to 0
-
-# Combine position and velocity into initial condition vector (8 elements)
-u0 = [λ0, r0, θ0, ϕ0, v[1], v[2], v[3], v[4]]
+# Update initial state vector for ODE solver
+u0 = [λ0, r, θ, ϕ, p[1], p[2], p[3], p[4]]
 
 # Define the ODE function using an in-place form
 function intprob!(du, u, p, λ)
@@ -87,7 +74,7 @@ function intprob!(du, u, p, λ)
 end
 
 # Set up and solve the ODE problem
-tspan = (0.0, 1000.0)
+tspan = (0.0, 5000.0)
 prob = ODEProblem(intprob!, u0, tspan)
 sol = @time solve(prob, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=0.01)
 
@@ -122,28 +109,10 @@ for i in 1:length(sol)
     push!(Q_vals, Q)
 end
 
+
 # Extract radial and azimuthal values for plotting
 r_vals = [sol[i][2] for i in 1:length(sol)]
 ϕ_vals = [sol[i][4] for i in 1:length(sol)]
-
-# First plot the photon path, then overlay the event horizon
-pl = plot(
-    ϕ_vals, r_vals,
-    lw = 2,
-    label = "Photon Path",
-    color = :blue,
-    proj = :polar,
-    ylim = (0.0, 15),
-    title = "Photon Path in Spherical Coordinates"
-)
-
-plot!(
-    θ -> r_horizon,
-    0:0.01:2π,
-    lw = 2,
-    label = "Event Horizon",
-    color = :black
-)
 
 # Convert polar coordinates to Cartesian coordinates
 x_vals = [r * cos(ϕ) for (r, ϕ) in zip(r_vals, ϕ_vals)]
@@ -159,10 +128,12 @@ pl_cartesian = plot(
     ylabel = "y",
     aspect_ratio = :equal,
     title = "Photon Path in Cartesian Coordinates",
-    xlim = (-10, 10)
+    xlim = (-10, 10),
+    ylim = (-10, 10)
 )
 
 # Overlay event horizon in Cartesian coordinates
+r_horizon = 1 + sqrt(1 - a^2)  # Event horizon radius for Kerr black hole
 circle_x = [r_horizon * cos(θ) for θ in 0:0.01:2π]
 circle_y = [r_horizon * sin(θ) for θ in 0:0.01:2π]
 
@@ -174,69 +145,67 @@ plot!(
     color = :black
 )
 
-# Display both plots
-plot(pl, pl_cartesian, layout = (1, 2), size = (1200, 600))
+# Display the Cartesian plot
+display(pl_cartesian)
+
 
 # Extract affine parameter values
 λ_vals = sol.t
 
-# Plot Energy-like and Momentum-like Quantity
-plot(
-    λ_vals, 
-    E_vals, 
-    xlabel="Affine Parameter λ", 
-    ylabel="Energy-like Quantity E", 
-    label="E(λ)", 
-    legend=:outerbottom, 
-    colour =:red,
-    lw =1.5
-    )
-plot(
-    λ_vals, 
-    L_vals, 
-    xlabel="Affine Parameter λ", 
-    ylabel="Momentum-like Quantity L", 
-    label="L(λ)", 
-    legend=:outerbottom, 
-    colour =:blue,
-    lw=1.5
-    )
-plot(
-    λ_vals, 
-    Q_vals, 
-    xlabel="Affine Parameter λ", 
-    ylabel="Carter Constant Q", 
-    label="Q(λ)", 
-    legend=:outerbottom, 
-    colour =:green,
-    lw = 1.5
-    )
+pl_Econserved = plot(
+    xlabel="Affine Parameter λ",
+    ylabel="|ΔE| (log scale)",
+    title="Energy Difference |E₀ - E(λ)|",
+    legend=:outerright,
+    yscale=:log10,
+)
 
+abs_E_diff = abs.(E_vals .- E_vals[1])
+abs_E_diff[abs_E_diff .== 0] .= 1e-10  # Replace zeros with small values
 
-
-plot(
-    λ_vals, 
-    E_vals, 
-    xlabel="Affine Parameter λ", 
-    ylabel="Energy-like Quantity E", 
-    label="E(λ)", 
-    legend=:outerbottom, 
-    colour =:red,
-    lw=1.5
-    )
 plot!(
-    λ_vals, 
-    L_vals, 
-    title = "Conservation of Q, E and L", 
-    xlabel="Affine Parameter λ", 
-    ylabel="Angular Momentum-like Quantity L", 
-    label="L(λ)", 
-    colour =:blue,
+    pl_Econserved,
+    λ_vals, abs_E_diff,
+    label="|ΔE|",
     lw=1.5
-    )
+)
+
+
+pl_Lconserved = plot(
+    xlabel="Affine Parameter λ",
+    ylabel="|ΔL| (log scale)",
+    title="Momentum Difference |L₀ - L(λ)|",
+    legend=:outerright,
+    yscale=:log10,
+)
+
+abs_L_diff = abs.(L_vals .- L_vals[1])
+abs_L_diff[abs_L_diff .== 0] .= 1e-10  # Replace zeros with small values
+
 plot!(
-    λ_vals, 
-    Q_vals, 
-    label = "Q(λ)",
-    lw=1.5)
-savefig("conservations_a=0.0_r=0.3.png")
+    pl_Lconserved,
+    λ_vals, abs_L_diff,
+    label="|ΔL|",
+    lw=1.5
+)
+
+
+pl_Qconserved = plot(
+    xlabel="Affine Parameter λ",
+    ylabel="|ΔQ| (log scale)",
+    title="Carter Const. Difference |Q₀ - Q(λ)|",
+    legend=:outerright,
+    yscale=:log10,
+)
+
+
+abs_Q_diff = abs.(Q_vals .- Q_vals[1])
+abs_Q_diff[abs_Q_diff .== 0] .= 1e-10  # Replace zeros with small values
+
+plot!(
+    pl_Qconserved,
+    λ_vals, abs_Q_diff,
+    label="|ΔQ|",
+    lw=1.5
+)
+
