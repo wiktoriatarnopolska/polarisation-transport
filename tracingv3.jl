@@ -77,7 +77,7 @@ for x in x_values
     p = [p_t, p_r, p_θ, p_ϕ]
 
     # Calculate initial conserved quantities
-    E_initial, Lz_initial, Q_initial = calculate_conserved_quantities(g, p)
+    E_initial, Lz_initial, Q_initial = calculate_conserved_quantities(g, p, a)
 
     # Update initial state vector for ODE solver
     u0 = [observer[4], r, θ, ϕ, p[1], p[2], p[3], p[4]]
@@ -161,8 +161,9 @@ for x in x_values
         push!(Q_vals_all, Q_vals)
 
         # Extract positions for plotting
-        x_vals = [r * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
-        y_vals = [r * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+        x_vals = [sqrt(r^2 + a^2) * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+        y_vals = [sqrt(r^2 + a^2) * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+
 
         # Append trajectories for photons that hit the disc
         push!(x_vals_hits, x_vals)
