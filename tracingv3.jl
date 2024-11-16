@@ -16,8 +16,8 @@ tspan = (0.0, 5000.0)
 x_values = collect(-10.0:1.0:10.0)  # x values from -10 to 10 with step size 1
 
 # Disc parameters
-r_horizon = horizon(0.9)
-r_in = isco_radius(0.9)       # Inner radius of the disc
+r_horizon = horizon(a)
+r_in = isco_radius(a)       # Inner radius of the disc
 r_out = 10.0                  # Outer radius of the disc
 
 # Arrays to store trajectories for photons that hit the disc
@@ -32,24 +32,6 @@ disc_hits = []
 E_vals_all = []
 L_vals_all = []
 Q_vals_all = []
-
-# Function to calculate energy (E), angular momentum (Lz), and Carter constant (Q)
-function calculate_conserved_quantities(g, p, a)
-    g_tt, g_tϕ, g_rr, g_θθ, g_ϕϕ = g[1, 1], g[1, 4], g[2, 2], g[3, 3], g[4, 4]
-
-    # Extract momentum components
-    p_t, p_r, p_θ, p_ϕ = p
-
-    # Calculate Energy E
-    E = - (g_tt * p_t + g_tϕ * p_ϕ)
-
-    # Calculate Angular Momentum Lz
-    L_z = g_tϕ * p_t + g_ϕϕ * p_ϕ
-
-    # Calculate Carter Constant Q
-    Q = (g_θθ * p_θ)^2 + cos(θ)^2 * ( - a^2 * (g_tt * p_t)^2 + (g_ϕϕ * p_ϕ + g_tϕ * p_t)^2 / sin(θ)^2)
-    return E, L_z, Q
-end
 
 # Loop over all x values to compute photon trajectories
 for x in x_values

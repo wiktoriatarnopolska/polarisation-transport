@@ -4,7 +4,7 @@ using Plots
 
 # Constants
 M = 1.0  # Mass of the black hole
-a = 0.998
+a = 0.9
 
 observer = (1000.0, deg2rad(60), 0.0, 0.0)
 
@@ -16,8 +16,8 @@ tspan = (0.0, 5000.0)
 x_values = collect(-10.0:1.0:10.0)  # x values from -10 to 10 with step size 1
 
 # Disc parameters
-r_horizon = horizon(0.9)
-r_in = isco_radius(0.9)       # Inner radius of the disc
+r_horizon = horizon(a)
+r_in = isco_radius(a)       # Inner radius of the disc
 r_out = 10.0                  # Outer radius of the disc
 
 # Arrays to store trajectories for photons that hit the disc
@@ -104,8 +104,7 @@ for x in x_values
         # Extract positions for plotting
         x_vals = [sqrt(r^2 + a^2) * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
         y_vals = [sqrt(r^2 + a^2) * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
-
-
+        
         # Append trajectories for photons that hit the disc
         push!(x_vals_hits, x_vals)
         push!(y_vals_hits, y_vals)

@@ -140,10 +140,100 @@ function disc_hit_affect!(integrator)
     end
 end
 
+# Transform the photon's (x, y, 0) coordinates to BH Cartesian coordinates
+function transform_to_bh_coords(x, y, observer, a)
+    r_obs, θ_obs, ϕ_obs = observer[1:3]
+
+    D = (sqrt(r0^2 + a^2)) * sin(θ_obs) - y * cos(θ_obs)
+    
+    # Cartesian coordinates relative to the BH
+    x_bh = D * cos(ϕ_obs) - x * sin(ϕ_obs)
+    y_bh = D * sin(ϕ_obs) + x * cos(ϕ_obs)
+    z_bh = r_obs * cos(θ_obs) + y * sin(θ_obs)
+    
+    return x_bh, y_bh, z_bh
+end
+
+# Convert BH Cartesian coordinates to Boyer-Lindquist coordinates
+function to_boyer_lindquist(x_bh, y_bh, z_bh, a)
+
+    δ = x_bh^2 + y_bh^2 + z_bh^2 - a^2
+
+    r = sqrt((δ + sqrt(δ^2 + 4 * a^2 * z_bh^2))/2)
+    θ = acos(z_bh / r)
+    ϕ = atan(y_bh, x_bh)  # Note: atan2(y_bh, x_bh) can be used for a more robust implementation
+    return r, θ, ϕ
+end
+
+# Solve for p^t given the metric and momentum components
+function solve_pt(g, p_r, p_θ, p_ϕ)
+    g_tt = g[1, 1]
+    g_tϕ = g[1, 4]
+    g_rr = g[2, 2]
+    g_θθ = g[3, 3]
+    g_ϕϕ = g[4, 4]
+
+    # Quadratic coefficients for p^t
+    A = g_tt
+    B = g_tϕ * p_ϕ
+    C = g_rr * p_r^2 + g_θθ * p_θ^2 + g_ϕϕ * p_ϕ^2
+
+    Δ = (2 * B)^2 - 4 * A * C
+    if Δ < 0
+        error("No real solution for p^t. Check initial conditions.")
+    end
+
+    # Use the negative root for future-directed motion
+    p_t = (-2 * B - sqrt(Δ)) / (2 * A)
+    
+    return p_t
+end
+
+# Function to calculate E and Lz from p^t, p^phi and metric components
+function calculate_energy_angular_momentum(g, p_t, p_ϕ)
+    g_tt = g[1, 1]
+    g_tϕ = g[1, 4]
+    g_ϕϕ = g[4, 4]
+
+    # Calculate Energy E
+    E = - (g_tt * p_t + g_tϕ * p_ϕ)
+
+    # Calculate Angular Momentum L_z
+    L_z = g_tϕ * p_t + g_ϕϕ * p_ϕ
+
+    return E, L_z
+end
+
+
+# Function to calculate energy (E), angular momentum (Lz), and Carter constant (Q)
+function calculate_conserved_quantities(g, p, a)
+    g_tt, g_tϕ, g_rr, g_θθ, g_ϕϕ = g[1, 1], g[1, 4], g[2, 2], g[3, 3], g[4, 4]
+
+    # Extract momentum components
+    p_t, p_r, p_θ, p_ϕ = p
+
+    # Calculate Energy E
+    E = - (g_tt * p_t + g_tϕ * p_ϕ)
+
+    # Calculate Angular Momentum Lz
+    L_z = g_tϕ * p_t + g_ϕϕ * p_ϕ
+
+    # Calculate Carter Constant Q
+    Q = (g_θθ * p_θ)^2 + cos(θ)^2 * ( - a^2 * (g_tt * p_t)^2 + (g_ϕϕ * p_ϕ + g_tϕ * p_t)^2 / sin(θ)^2)
+    
+    return E, L_z, Q
+
+end
+
 export isco_radius, 
 novikov_thorne_profile, 
 compute_christoffel_analytical, 
 metric, 
 horizon, 
 disc_hit_condition, 
-disc_hit_affect!
+disc_hit_affect!,
+transform_to_bh_coords,
+to_boyer_lindquist,
+solve_pt,
+calculate_energy_angular_momentum,
+calculate_conserved_quantities
