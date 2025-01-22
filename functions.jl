@@ -225,6 +225,43 @@ function calculate_conserved_quantities(g, p, a)
 
 end
 
+# Define the ODE function using an in-place form
+function intprob!(du, u, p, λ)
+    # Current position and momentum
+    x = u[1:4]
+    p = u[5:8]
+
+    r_val, θ_val = x[2], x[3]
+
+    # Initialize du
+    du .= 0.0
+
+    # Terminate the integration if r crosses the event horizon
+    if r_val <= r_horizon
+        du[1:4] .= p
+        return
+    end
+
+    # Compute analytical Christoffel symbols
+    Γ = compute_christoffel_analytical(r_val, θ_val)
+
+    # Compute the derivatives of velocity
+    dp = zeros(4)
+    for μ in 1:4
+        sum_ = 0.0
+        for ν in 1:4
+            for λ in 1:4
+                sum_ += Γ[μ, ν, λ] * p[ν] * p[λ]
+            end
+        end
+        dp[μ] = -sum_
+    end
+
+    # Assign derivatives to du
+    du[1:4] .= p
+    du[5:8] .= dp
+end
+
 export isco_radius, 
 novikov_thorne_profile, 
 compute_christoffel_analytical, 
@@ -236,4 +273,5 @@ transform_to_bh_coords,
 to_boyer_lindquist,
 solve_pt,
 calculate_energy_angular_momentum,
-calculate_conserved_quantities
+calculate_conserved_quantities,
+intprob!

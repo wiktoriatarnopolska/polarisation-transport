@@ -14,8 +14,8 @@ r0 = observer[1]
 
 # Example usage for transforming and solving for initial conditions
 x, y = 0.0, 0.0  # Example values for (x, y) in observer's image plane
-x_bh, y_bh, z_bh = transform_to_bh_coords(x, y, observer)
-r, θ, ϕ = to_boyer_lindquist(x_bh, y_bh, z_bh)
+x_bh, y_bh, z_bh = transform_to_bh_coords(x, y, observer, a)
+r, θ, ϕ = to_boyer_lindquist(x_bh, y_bh, z_bh, a)
 
 Σ = r^2 + a^2 * cos(θ)^2
 
