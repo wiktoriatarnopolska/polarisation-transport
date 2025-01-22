@@ -276,10 +276,6 @@ y_vals = [sqrt(r^2 + a^2) * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_
 push!(x_vals_all, x_vals)
 push!(y_vals_all, y_vals)
 
-# Convert the disc hits to Cartesian coordinates
-x_hits = [r_hit * sin(π/2) * cos(ϕ_hit) for (_, r_hit, ϕ_hit) in disc_hits]
-y_hits = [r_hit * sin(π/2) * sin(ϕ_hit) for (_, r_hit, ϕ_hit) in disc_hits]
-
 # Plot the disc boundaries
 θ_values = range(0, 2π, length=500)
 x_inner = [r_in * cos(θ) for θ in θ_values]
