@@ -327,6 +327,3 @@ plot!(
 )
 
 display(pl_disc)
-
-θ_hit = π/2
-quiver([r_hit], [θ_hit], quiver=(p_r_rev, p_θ_rev))
