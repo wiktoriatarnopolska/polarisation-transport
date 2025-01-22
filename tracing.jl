@@ -6,7 +6,7 @@ using Plots
 M = 1.0  # Mass of the black hole
 a = 0.9
 
-observer = (20.0, deg2rad(60), 0.0, 0.0)
+observer = (1000.0, deg2rad(60), 0.0, 0.0)
 
 callback = ContinuousCallback(disc_hit_condition, disc_hit_affect!)
 
