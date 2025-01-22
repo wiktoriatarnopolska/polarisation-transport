@@ -246,6 +246,8 @@ p_r_rev = -p_r_hit
 p_θ_rev = -p_θ_hit
 p_ϕ_rev = -p_ϕ_hit
 
+p_t = solve_pt(g, p_r, p_θ, p_ϕ)
+
 u0_rev = [λ0, r_hit, π/2, ϕ_hit, p_t, p_r_rev, p_θ_rev, p_ϕ_rev]
 
 tspan_rev = (0.0, -5000.0)
