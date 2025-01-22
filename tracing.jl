@@ -61,7 +61,7 @@ b = L_z / E
 
 # Continue with ODE solving using the updated u0
 prob = ODEProblem(intprob!, u0, tspan)
-sol = solve(prob, Tsit5(), callback=callback, abstol=1e-12, reltol=1e-12, dtmax=1.0)
+sol = solve(prob, Tsit5(), callback=callback, abstol=1e-14, reltol=1e-14, dtmax=1.0)
 
 
 # Extract positions and times
@@ -242,48 +242,34 @@ display(pl_disc)
 # prob = ODEProblem(intprob!, u0, tspan)
 # sol = solve(prob, Tsit5(), callback=callback, abstol=1e-12, reltol=1e-12, dtmax=1.0)
 
-
-# Reverse the momenta for time-reversed geodesic
 p_r_rev = -p_r_hit
 p_θ_rev = -p_θ_hit
 p_ϕ_rev = -p_ϕ_hit
 
-# Construct new initial conditions
 u0_rev = [λ0, r_hit, π/2, ϕ_hit, p_t, p_r_rev, p_θ_rev, p_ϕ_rev]
 
-# Adjust tspan for reverse time integration
-tspan_rev = (0.0, -5.0)
+tspan_rev = (0.0, -5000.0)
 
-# Solve ODE backward
 prob_rev = ODEProblem(intprob!, u0_rev, tspan_rev)
 sol_rev = solve(prob_rev, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=1.0)
 
-
-# Extract positions and times
-t_vals = sol.t
-r_vals = [sol[i][2] for i in 1:length(sol)]
-θ_vals = [sol[i][3] for i in 1:length(sol)]
-ϕ_vals = [sol[i][4] for i in 1:length(sol)]
-
-
-# Extract positions for plotting
-# this is in BH frame(?) should i change to observer's?
+t_vals = sol_rev.t
+r_vals = [sol_rev[i][2] for i in 1:length(sol_rev)]
+θ_vals = [sol_rev[i][3] for i in 1:length(sol_rev)]
+ϕ_vals = [sol_rev[i][4] for i in 1:length(sol_rev)]
 
 x_vals = [sqrt(r^2 + a^2) * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
 y_vals = [sqrt(r^2 + a^2) * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
 
-# Append trajectories
 push!(x_vals_all, x_vals)
 push!(y_vals_all, y_vals)
 
-# Plot the disc boundaries
 θ_values = range(0, 2π, length=500)
 x_inner = [r_in * cos(θ) for θ in θ_values]
 y_inner = [r_in * sin(θ) for θ in θ_values]
 x_outer = [r_out * cos(θ) for θ in θ_values]
 y_outer = [r_out * sin(θ) for θ in θ_values]
 
-# Initialize the plot
 pl_disc = plot(
     x_outer, y_outer,
     seriestype = :shape,
@@ -297,8 +283,6 @@ pl_disc = plot(
     xlim = (-20, 20),
     ylim = (-20, 20),
 )
-
-# Fill the inner disc area
 plot!(
     x_inner, y_inner,
     seriestype = :shape,
@@ -307,7 +291,6 @@ plot!(
     label = false
 )
 
-# Overlay the event horizon
 circle_x = [r_horizon * cos(θ) for θ in 0:0.01:2π]
 circle_y = [r_horizon * sin(θ) for θ in 0:0.01:2π]
 plot!(
@@ -317,7 +300,6 @@ plot!(
     label = "Event horizon"
 )
 
-# Overlay the ISCO
 isco_x = [r_in * cos(θ) for θ in 0:0.01:2π]
 isco_y = [r_in * sin(θ) for θ in 0:0.01:2π]
 plot!(
@@ -327,7 +309,6 @@ plot!(
     label = "ISCO"
 )
 
-# Overlay the hit points
 scatter!(
     pl_disc,
     x_hits, y_hits,
@@ -337,7 +318,6 @@ scatter!(
     label = "Disc Hits",
 )
 
-# Plot the trajectory
 plot!(
     pl_disc,
     x_vals, y_vals,
@@ -346,5 +326,7 @@ plot!(
     label = false
 )
 
-# Display the plot
 display(pl_disc)
+
+θ_hit = π/2
+quiver([r_hit], [θ_hit], quiver=(p_r_rev, p_θ_rev))
