@@ -15,7 +15,7 @@ tspan = (0.0, 5000.0)
 # Disc parameters
 r_horizon = horizon(a)
 r_in = isco_radius(a)       # Inner radius of the disc
-r_out = 10.0                  # Outer radius of the disc
+r_out = 10.0                # Outer radius of the disc
 
 # Arrays to store trajectories
 x_vals_all = []
@@ -30,7 +30,7 @@ r0 = observer[1]
 λ0 = observer[4]
 
 # Transforming and solving for initial conditions
-x, y = 6.0, 0.0  # Example values for (x, y) in observer's image plane
+x, y = 6.0, 0.0 
 x_bh, y_bh, z_bh = transform_to_bh_coords(x, y, observer, a)
 r, θ, ϕ = to_boyer_lindquist(x_bh, y_bh, z_bh, a)
 
@@ -47,6 +47,8 @@ g = metric(r, θ)
 # Solve for p^t
 p_t = solve_pt(g, p_r, p_θ, p_ϕ)
 
+norm = g[1, 1] * p_t^2 + g[2,2] * p_r^2 + g[3,3] * p_θ^2 + g[4, 4] * p_ϕ^2
+
 # Initial momentum vector
 p = [p_t, p_r, p_θ, p_ϕ]
 
@@ -54,14 +56,14 @@ p = [p_t, p_r, p_θ, p_ϕ]
 u0 = [λ0, r, θ, ϕ, p[1], p[2], p[3], p[4]]
 
 # Calculate initial (?) Energy (E) and Angular Momentum (Lz)
-E, L_z = calculate_energy_angular_momentum(g, p_t, p_ϕ)
+E, L_z, Q = calculate_conserved_quantities(g, p, a)
 
 # Calculate the impact parameter b = Lz / E
 b = L_z / E
 
 # Continue with ODE solving using the updated u0
 prob = ODEProblem(intprob!, u0, tspan)
-sol = solve(prob, Tsit5(), callback=callback, abstol=1e-14, reltol=1e-14, dtmax=1.0)
+sol = solve(prob, Tsit5(), callback = callback, abstol=1e-14, reltol=1e-14, dtmax=1.0)
 
 
 # Extract positions and times
@@ -74,6 +76,8 @@ r_vals = [sol[i][2] for i in 1:length(sol)]
 hit_disc = false
 r_hit = 0.0
 ϕ_hit = 0.0
+θ_hit = 0.0
+
 p_r_hit = 0.0
 p_θ_hit = 0.0
 p_ϕ_hit = 0.0
@@ -89,6 +93,7 @@ for i in 1:length(θ_vals)-1
         fraction = (π/2 - θ1) / (θ2 - θ1)
         r_cross = r_vals[i] + fraction * (r_vals[i+1] - r_vals[i])
         ϕ_cross = ϕ_vals[i] + fraction * (ϕ_vals[i+1] - ϕ_vals[i])
+        θ_cross = θ1 + fraction * (θ2 - θ1)
 
         # Normalize ϕ_cross between 0 and 2π
         ϕ_cross = mod(ϕ_cross, 2π)
@@ -98,6 +103,7 @@ for i in 1:length(θ_vals)-1
             hit_disc = true
             r_hit = r_cross
             ϕ_hit = ϕ_cross
+            θ_hit = θ_cross
             p_r_hit = p_r
             p_θ_hit = p_θ
             p_ϕ_hit = p_ϕ
@@ -112,11 +118,9 @@ if hit_disc
     push!(disc_hits, (b, r_hit, ϕ_hit))
 end
 
-# Extract positions for plotting
-# this is in BH frame(?) should i change to observer's?
-
 x_vals = [sqrt(r^2 + a^2) * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
 y_vals = [sqrt(r^2 + a^2) * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+z_vals = [r * cos(θ) for (r, θ) in zip(r_vals, θ_vals)]
 
 # Append trajectories
 push!(x_vals_all, x_vals)
@@ -126,7 +130,7 @@ println("Number of disc hits: ", length(disc_hits))
 
 # Use disc_hits to analyze or visualize the geodesics that hit the disc
 for (b, r_hit, ϕ_hit) in disc_hits
-    println("Geodesic with impact parameter b = $b hits the disc at (r, ϕ) = ($r_hit, $ϕ_hit) with p_r = $p_r_hit, p_θ = $p_θ_hit, p_ϕ = $p_ϕ_hit") 
+    println("Geodesic with impact parameter b = $b hits the disc at (r, ϕ, θ) = ($r_hit, $ϕ_hit, $θ_hit)") 
 end
 
 #### PLOTTING ################################################################################
@@ -134,7 +138,7 @@ end
 # Convert the disc hits to Cartesian coordinates
 x_hits = [r_hit * sin(π/2) * cos(ϕ_hit) for (_, r_hit, ϕ_hit) in disc_hits]
 y_hits = [r_hit * sin(π/2) * sin(ϕ_hit) for (_, r_hit, ϕ_hit) in disc_hits]
-
+z_hits = [r_hit * cos(π/2)]
 # Plot the disc boundaries
 θ_values = range(0, 2π, length=500)
 x_inner = [r_in * cos(θ) for θ in θ_values]
@@ -213,42 +217,17 @@ display(pl_disc)
 ###########################################################################
 #   TO TRACE BACK
 
-# r0 = r_hit
-# ϕ0 = ϕ_hit
-# θ0 = π/2
-
-# tspan = (5000, 0)
-
-# λ0 = 0.0
-
-# p_r = -p_r_hit
-# p_θ = -p_θ_hit
-# p_ϕ = -p_ϕ_hit
-
-# # Metric at the initial position
-# g = metric(r0, θ0)
-
-# # Solve for p^t
-# p_t = solve_pt(g, p_r, p_θ, p_ϕ)
-
-# norm = g[1, 1] * p_t^2 + g[2,2] * p_r^2 + g[3,3] * p_θ^2 + g[4, 4] * p_ϕ^2
-
-# # Initial momentum vector
-# p = [p_t, p_r, p_θ, p_ϕ]
-
-# u0 = [λ0, r0, θ0, ϕ0, p[1], p[2], p[3], p[4]]
-
-# # Continue with ODE solving using the updated u0
-# prob = ODEProblem(intprob!, u0, tspan)
-# sol = solve(prob, Tsit5(), callback=callback, abstol=1e-12, reltol=1e-12, dtmax=1.0)
-
 p_r_rev = -p_r_hit
-p_θ_rev = -p_θ_hit
-p_ϕ_rev = -p_ϕ_hit
+p_θ_rev = mod(p_θ_hit + π, π)
+p_ϕ_rev = mod(p_ϕ_hit + π, 2π)
 
 p_t = solve_pt(g, p_r, p_θ, p_ϕ)
 
-u0_rev = [λ0, r_hit, π/2, ϕ_hit, p_t, p_r_rev, p_θ_rev, p_ϕ_rev]
+norm = g[1, 1] * p_t^2 + g[2,2] * p_r^2 + g[3,3] * p_θ^2 + g[4, 4] * p_ϕ^2
+
+E_hit, L_z_hit, Q = calculate_conserved_quantities(g, p, a)
+
+u0_rev = [λ0, r_hit, θ_hit, ϕ_hit, p_t, p_r_rev, p_θ_rev, p_ϕ_rev]
 
 tspan_rev = (0.0, -5000.0)
 
@@ -260,8 +239,8 @@ r_vals = [sol_rev[i][2] for i in 1:length(sol_rev)]
 θ_vals = [sol_rev[i][3] for i in 1:length(sol_rev)]
 ϕ_vals = [sol_rev[i][4] for i in 1:length(sol_rev)]
 
-x_vals = [sqrt(r^2 + a^2) * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
-y_vals = [sqrt(r^2 + a^2) * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+x_vals = [sqrt(r^2) * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+y_vals = [sqrt(r^2) * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
 
 push!(x_vals_all, x_vals)
 push!(y_vals_all, y_vals)
