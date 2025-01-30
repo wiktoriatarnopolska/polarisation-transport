@@ -43,11 +43,16 @@ p_ϕ = (sin(θ0) * sin(ϕ-ϕ0))/(sqrt(r^2 + a^2) * sin(θ))
 
 # Metric at the initial position
 g = metric(r, θ)
+g_tt = g[1,1]
+g_tϕ = g[1,4]
+g_rr = g[2,2]
+g_θθ = g[3,3]
+g_ϕϕ = g[4,4]
 
 # Solve for p^t
 p_t = solve_pt(g, p_r, p_θ, p_ϕ)
 
-norm = g[1, 1] * p_t^2 + g[2,2] * p_r^2 + g[3,3] * p_θ^2 + g[4, 4] * p_ϕ^2
+norm = g[1,1]*p_t^2 + g[2,2]*p_r^2 + g[3,3]*p_θ^2 + g[4,4]*p_ϕ^2 + 2*g[1,4]*p_t*p_ϕ
 
 # Initial momentum vector
 p = [p_t, p_r, p_θ, p_ϕ]
@@ -56,7 +61,7 @@ p = [p_t, p_r, p_θ, p_ϕ]
 u0 = [λ0, r, θ, ϕ, p[1], p[2], p[3], p[4]]
 
 # Calculate initial (?) Energy (E) and Angular Momentum (Lz)
-E, L_z, Q = calculate_conserved_quantities(g, p, a)
+E, L_z, Q = calculate_conserved_quantities(g, p, a, θ)
 
 # Calculate the impact parameter b = Lz / E
 b = L_z / E
@@ -78,6 +83,7 @@ r_hit = 0.0
 ϕ_hit = 0.0
 θ_hit = 0.0
 
+p_t_hit = 0.0
 p_r_hit = 0.0
 p_θ_hit = 0.0
 p_ϕ_hit = 0.0
@@ -98,24 +104,32 @@ for i in 1:length(θ_vals)-1
         # Normalize ϕ_cross between 0 and 2π
         ϕ_cross = mod(ϕ_cross, 2π)
 
+        # Interpolated momenta at the hit
+        p_t_hit = sol[i][5] + fraction * (sol[i+1][5] - sol[i][5])
+        p_r_hit = sol[i][6] + fraction * (sol[i+1][6] - sol[i][6])
+        p_θ_hit = sol[i][7] + fraction * (sol[i+1][7] - sol[i][7])
+        p_ϕ_hit = sol[i][8] + fraction * (sol[i+1][8] - sol[i][8])
+
         # Check if r_cross is within the disc's radial extent
         if r_in <= r_cross <= r_out
             hit_disc = true
             r_hit = r_cross
             ϕ_hit = ϕ_cross
             θ_hit = θ_cross
-            p_r_hit = p_r
-            p_θ_hit = p_θ
-            p_ϕ_hit = p_ϕ
+
+            # p_t_hit = p_t
+            # p_r_hit = p_r
+            # p_θ_hit = p_θ
+            # p_ϕ_hit = p_ϕ
             break  # Exit loop after first intersection
         end
     end
 end
 
 # Record the intersection if it occurs
+# Record the intersection with momenta
 if hit_disc
-    # Store the (b, r_hit, ϕ_hit) for later use
-    push!(disc_hits, (b, r_hit, ϕ_hit))
+    push!(disc_hits, (b, r_hit, ϕ_hit, p_t_hit, p_r_hit, p_θ_hit, p_ϕ_hit))
 end
 
 x_vals = [sqrt(r^2 + a^2) * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
@@ -217,17 +231,98 @@ display(pl_disc)
 ###########################################################################
 #   TO TRACE BACK
 
-p_r_rev = -p_r_hit
-p_θ_rev = mod(p_θ_hit + π, π)
-p_ϕ_rev = mod(p_ϕ_hit + π, 2π)
+# state at hit point
 
-p_t = solve_pt(g, p_r, p_θ, p_ϕ)
+g = metric(r_hit, θ_hit)
+g_tt = g[1,1]
+g_tϕ = g[1,4]
+g_rr = g[2,2]
+g_θθ = g[3,3]
+g_ϕϕ = g[4,4]
 
-norm = g[1, 1] * p_t^2 + g[2,2] * p_r^2 + g[3,3] * p_θ^2 + g[4, 4] * p_ϕ^2
+# Recompute metric at hit point
+g_hit = metric(r_hit, θ_hit)
 
-E_hit, L_z_hit, Q = calculate_conserved_quantities(g, p, a)
+# Extract momentum components at hit
+p_hit = [p_t_hit, p_r_hit, p_θ_hit, p_ϕ_hit]
 
-u0_rev = [λ0, r_hit, θ_hit, ϕ_hit, p_t, p_r_rev, p_θ_rev, p_ϕ_rev]
+# Compute conserved quantities at hit point
+E_hit, Lz_hit, Q_hit = calculate_conserved_quantities(g_hit, p_hit, a, θ_hit)
+
+println("Initial Energy E0: ", E)
+println("Energy at hit point E_hit: ", E_hit)
+println("ΔE = ", abs(E - E_hit))
+
+println("Initial Momentum L0: ", L_z)
+println("Momentum at hit point Lz_hitt: ", Lz_hit)
+println("ΔLz_obs = ", abs(L_z - Lz_hit))
+
+println("Initial Carter const. Q0: ", Q)
+println("Carter const. at hit point Q_hit: ", Q_hit)
+println("ΔQ = ", abs(Q - Q_hit))
+
+p = [p_t_hit, p_r_hit, p_θ_hit, p_ϕ_hit]
+
+norm = g[1,1]*p_t_hit^2 + g[2,2]*p_r_hit^2 + g[3,3]*p_θ_hit^2 + g[4,4]*p_ϕ_hit^2 + 2*g[1,4]*p_t_hit*p_ϕ_hit
+
+# Reversing
+p_r = -p_r_hit
+p_θ = (π/2 - p_θ_hit)
+p_ϕ = (p_ϕ_hit + π) % (2*π)
+
+# Δ = r_hit^2 - 2 * r_hit + a^2
+# Σ = r_hit^2 + a^2 * (cos(θ_hit))^2
+# A = (r_hit^2 + a^2)^2 - a^2 * Δ * sin(θ_hit)^2
+# ω = 2 * a * r_hit / A
+
+# et_t = sqrt(((r_hit^2 + a^2)^2 * Δ / A)/Σ)
+# et_ϕ = - ω * et_t
+# er_r = sqrt(Δ/Σ)
+# eθ_θ = 1 / sqrt(Σ)
+# eϕ_t = - ω * sqrt(Σ/A) * sin(θ_hit)
+# eϕ_ϕ = sqrt(Σ/A) * sin(θ_hit)
+
+# # # B-L -> LNRF
+# # p_θ = eθ_θ * p_θ_hit
+# # p_ϕ = et_ϕ * p_ϕ_hit + eϕ_ϕ * p_ϕ_hit
+
+# # # Inverse
+
+# # p_θ_rev = - p_θ
+# # p_ϕ_rev = - p_ϕ
+
+# # # Transform back 
+# # p_θ = eθ_θ * p_θ_rev
+# # p_ϕ = eϕ_ϕ * p_ϕ_rev - et_ϕ * p_ϕ_rev
+
+# # correction_θ = p_θ_hit / p_θ
+# # correction_ϕ = p_ϕ_hit / p_ϕ
+
+# # To LNRF
+# p_r_LNRF = er_r * p_r_hit
+# p_θ_LNRF = eθ_θ * p_θ_hit
+# p_ϕ_LNRF = eϕ_t * p_t_hit + eϕ_ϕ * p_ϕ_hit
+
+# # Reverse in LNRF
+# p_r = p_r_hit
+# p_θ = ((p_θ_hit + π) % π)
+# p_ϕ = (p_ϕ_hit + π) % (2*π)
+
+# # Back to Boyer-Lindquist
+# p_r = p_r_rev_LNRF / er_r
+# p_θ = p_θ_rev_LNRF / eθ_θ
+# p_ϕ = (p_ϕ_rev_LNRF - eϕ_t * p_t) / eϕ_ϕ
+
+# p_r = p_r_hit
+p_t = solve_pt(g, p_r, p_θ ,p_ϕ)
+
+norm = g[1,1]*p_t^2 + g[2,2]*p_r^2 + g[3,3]*p_θ^2 + g[4,4]*p_ϕ^2 + 2*g[1,4]*p_t*p_ϕ
+
+p = [p_t, p_r, p_θ, p_ϕ]
+
+E, L_z, Q = calculate_conserved_quantities(g, p, a)
+
+u0_rev = [λ0, r_hit, θ_hit, ϕ_hit, p_t, p_r, p_θ, p_ϕ]
 
 tspan_rev = (0.0, -5000.0)
 
@@ -239,8 +334,8 @@ r_vals = [sol_rev[i][2] for i in 1:length(sol_rev)]
 θ_vals = [sol_rev[i][3] for i in 1:length(sol_rev)]
 ϕ_vals = [sol_rev[i][4] for i in 1:length(sol_rev)]
 
-x_vals = [sqrt(r^2) * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
-y_vals = [sqrt(r^2) * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+x_vals = [sqrt(r^2 + a^2) * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
+y_vals = [sqrt(r^2+ a ^2) * sin(θ) * sin(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
 
 push!(x_vals_all, x_vals)
 push!(y_vals_all, y_vals)

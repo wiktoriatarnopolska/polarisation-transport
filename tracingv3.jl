@@ -13,7 +13,8 @@ callback = ContinuousCallback(disc_hit_condition, disc_hit_affect!)
 tspan = (0.0, 5000.0)
 
 # Define a range of x values in the observer's image plane
-x_values = collect(-10.0:1.0:10.0)  # x values from -10 to 10 with step size 1
+#x_values = collect(-10.0:1.0:10.0)  # x values from -10 to 10 with step size 1
+x_values = 6.0
 
 # Disc parameters
 r_horizon = horizon(a)
