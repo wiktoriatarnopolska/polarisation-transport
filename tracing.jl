@@ -52,7 +52,7 @@ g_ϕϕ = g[4,4]
 # Solve for p^t
 p_t = solve_pt(g, p_r, p_θ, p_ϕ)
 
-norm = g[1,1]*p_t^2 + g[2,2]*p_r^2 + g[3,3]*p_θ^2 + g[4,4]*p_ϕ^2 + 2*g[1,4]*p_t*p_ϕ
+H = g[1,1]*p_t^2 + g[2,2]*p_r^2 + g[3,3]*p_θ^2 + g[4,4]*p_ϕ^2 + 2*g[1,4]*p_t*p_ϕ
 
 # Initial momentum vector
 p = [p_t, p_r, p_θ, p_ϕ]
@@ -68,7 +68,7 @@ b = L_z / E
 
 # Continue with ODE solving using the updated u0
 prob = ODEProblem(intprob!, u0, tspan)
-sol = solve(prob, Tsit5(), callback = callback, abstol=1e-14, reltol=1e-14, dtmax=1.0)
+sol = solve(prob, Tsit5(), callback = callback, abstol=1e-12, reltol=1e-12, dtmax=0.01)
 
 
 # Extract positions and times
@@ -104,11 +104,18 @@ for i in 1:length(θ_vals)-1
         # Normalize ϕ_cross between 0 and 2π
         ϕ_cross = mod(ϕ_cross, 2π)
 
-        # Interpolated momenta at the hit
+        #Interpolated momenta at the hit
         p_t_hit = sol[i][5] + fraction * (sol[i+1][5] - sol[i][5])
         p_r_hit = sol[i][6] + fraction * (sol[i+1][6] - sol[i][6])
         p_θ_hit = sol[i][7] + fraction * (sol[i+1][7] - sol[i][7])
         p_ϕ_hit = sol[i][8] + fraction * (sol[i+1][8] - sol[i][8])
+
+        # λ_cross = sol.t[i] + fraction * (sol.t[i + 1] - sol.t[i])
+
+        # p_t_hit = sol(λ_cross)[5]
+        # p_r_hit = sol(λ_cross)[6]
+        # p_θ_hit = sol(λ_cross)[7]
+        # p_ϕ_hit = sol(λ_cross)[8]
 
         # Check if r_cross is within the disc's radial extent
         if r_in <= r_cross <= r_out
@@ -240,14 +247,14 @@ g_rr = g[2,2]
 g_θθ = g[3,3]
 g_ϕϕ = g[4,4]
 
-# Recompute metric at hit point
-g_hit = metric(r_hit, θ_hit)
-
 # Extract momentum components at hit
 p_hit = [p_t_hit, p_r_hit, p_θ_hit, p_ϕ_hit]
 
 # Compute conserved quantities at hit point
-E_hit, Lz_hit, Q_hit = calculate_conserved_quantities(g_hit, p_hit, a, θ_hit)
+E_hit, Lz_hit, Q_hit = calculate_conserved_quantities(g, p_hit, a, θ_hit)
+
+H_hit = g[1,1]*p_t_hit^2 + g[2,2]*p_r_hit^2 + g[3,3]*p_θ_hit^2 + g[4,4]*p_ϕ_hit^2 + 2*g[1,4]*p_t_hit*p_ϕ_hit
+
 
 println("Initial Energy E0: ", E)
 println("Energy at hit point E_hit: ", E_hit)
@@ -255,20 +262,21 @@ println("ΔE = ", abs(E - E_hit))
 
 println("Initial Momentum L0: ", L_z)
 println("Momentum at hit point Lz_hitt: ", Lz_hit)
-println("ΔLz_obs = ", abs(L_z - Lz_hit))
+println("ΔLz_hit = ", abs(L_z - Lz_hit))
 
 println("Initial Carter const. Q0: ", Q)
 println("Carter const. at hit point Q_hit: ", Q_hit)
 println("ΔQ = ", abs(Q - Q_hit))
 
-p = [p_t_hit, p_r_hit, p_θ_hit, p_ϕ_hit]
-
-norm = g[1,1]*p_t_hit^2 + g[2,2]*p_r_hit^2 + g[3,3]*p_θ_hit^2 + g[4,4]*p_ϕ_hit^2 + 2*g[1,4]*p_t_hit*p_ϕ_hit
+println("Initial H0: ", H)
+println("H at hit point H_hit: ", H_hit)
+println("ΔH = ", abs(H - H_hit))
 
 # Reversing
+#p_t = -p_t_hit
 p_r = -p_r_hit
-p_θ = (π/2 - p_θ_hit)
-p_ϕ = (p_ϕ_hit + π) % (2*π)
+p_θ = π/2 - p_θ_hit
+p_ϕ = p_ϕ_hit + π
 
 # Δ = r_hit^2 - 2 * r_hit + a^2
 # Σ = r_hit^2 + a^2 * (cos(θ_hit))^2
@@ -320,14 +328,14 @@ norm = g[1,1]*p_t^2 + g[2,2]*p_r^2 + g[3,3]*p_θ^2 + g[4,4]*p_ϕ^2 + 2*g[1,4]*p_
 
 p = [p_t, p_r, p_θ, p_ϕ]
 
-E, L_z, Q = calculate_conserved_quantities(g, p, a)
+E, L_z, Q = calculate_conserved_quantities(g, p, a, θ_hit)
 
 u0_rev = [λ0, r_hit, θ_hit, ϕ_hit, p_t, p_r, p_θ, p_ϕ]
 
 tspan_rev = (0.0, -5000.0)
 
 prob_rev = ODEProblem(intprob!, u0_rev, tspan_rev)
-sol_rev = solve(prob_rev, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=1.0)
+sol_rev = solve(prob_rev, Tsit5(), abstol=1e-14, reltol=1e-14, dtmax=1.0)
 
 t_vals = sol_rev.t
 r_vals = [sol_rev[i][2] for i in 1:length(sol_rev)]

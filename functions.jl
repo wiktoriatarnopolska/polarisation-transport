@@ -210,17 +210,22 @@ function calculate_conserved_quantities(g, p, a, θ)
     g_tt, g_tϕ, g_rr, g_θθ, g_ϕϕ = g[1, 1], g[1, 4], g[2, 2], g[3, 3], g[4, 4]
 
     # Extract momentum components
-    p_t, p_r, p_θ, p_ϕ = p
+    #p_t, p_r, p_θ, p_ϕ = p
 
     # Calculate Energy E
-    E = - (g_tt * p_t + g_tϕ * p_ϕ)
+    # E = - (g_tt * p_t + g_tϕ * p_ϕ)
 
-    # Calculate Angular Momentum Lz
-    L_z = g_tϕ * p_t + g_ϕϕ * p_ϕ
+    # # Calculate Angular Momentum Lz
+    # L_z = g_tϕ * p_t + g_ϕϕ * p_ϕ
 
-    # Calculate Carter Constant Q
-    Q = (g_θθ * p_θ)^2 + cos(θ)^2 * ( - a^2 * (g_tt * p_t + g_tϕ * p_ϕ)^2 + (g_tϕ * p_t + g_ϕϕ * p_ϕ)^2 / sin(θ)^2)
+    # # Calculate Carter Constant Q
+    # Q = (g_θθ * p_θ)^2 + cos(θ)^2 * ( - a^2 * (g_tt * p_t + g_tϕ * p_ϕ)^2 + (g_tϕ * p_t + g_ϕϕ * p_ϕ)^2 / sin(θ)^2)
     
+    E = -g_tt * p[1] - g_tϕ * p[4] # Energy-like quantity
+    L_z = g_tϕ * p[1] + g_ϕϕ * p[4]  # Angular momentum-like quantity
+    Q = (g_θθ * p[3])^2 + cos(θ)^2 * ( - a^2 * (g_tt * p[1]+ g_tϕ * p[4])^2 + ((g_ϕϕ * p[4] + g_tϕ * p[1])^2 / sin(θ)^2))
+
+
     return E, L_z, Q
 
 end

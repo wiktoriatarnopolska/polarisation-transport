@@ -20,6 +20,10 @@ x_values = 6.0
 r_horizon = horizon(a)
 r_in = isco_radius(a)       # Inner radius of the disc
 r_out = 10.0                  # Outer radius of the disc
+r0 = observer[1]
+θ0 = observer[2]
+ϕ0 = observer[3]
+λ0 = observer[4]
 
 # Arrays to store trajectories for photons that hit the disc
 x_vals_hits = []
@@ -33,6 +37,7 @@ disc_hits = []
 E_vals_all = []
 L_vals_all = []
 Q_vals_all = []
+H_vals_all = []
 
 # Loop over all x values to compute photon trajectories
 for x in x_values
@@ -60,7 +65,9 @@ for x in x_values
     p = [p_t, p_r, p_θ, p_ϕ]
 
     # Calculate initial conserved quantities
-    E_initial, Lz_initial, Q_initial = calculate_conserved_quantities(g, p, a)
+    E_initial, Lz_initial, Q_initial = calculate_conserved_quantities(g, p, a, θ)
+
+    b = Lz_initial / E_initial
 
     # Update initial state vector for ODE solver
     u0 = [observer[4], r, θ, ϕ, p[1], p[2], p[3], p[4]]
@@ -69,13 +76,19 @@ for x in x_values
     prob = ODEProblem(intprob!, u0, tspan)
 
     # Solve the ODE
-    sol = solve(prob, Tsit5(), callback=callback, abstol=1e-12, reltol=1e-12, dtmax=1.0)
+    sol = solve(prob, Tsit5(), callback=callback, abstol=1e-14, reltol=1e-14, dtmax=0.01)
 
     # Extract λ (affine parameter) and quantities for plotting
     λ_vals = sol.t
     E_vals = []
     L_vals = []
     Q_vals = []
+    H_vals = []
+
+    p_t_hit = 0.0
+    p_r_hit = 0.0
+    p_θ_hit = 0.0
+    p_ϕ_hit = 0.0
 
     # Check conservation of quantities at each time step
     for i in 1:length(sol)
@@ -83,18 +96,26 @@ for x in x_values
         r = sol[i][2]
         θ = sol[i][3]
         ϕ = sol[i][4]
-        p = sol[i][5:8]
+        p_t = sol[i][5]
+        p_r = sol[i][6]
+        p_θ = sol[i][7]
+        p_ϕ = sol[i][8]
+        p = [p_t, p_r, p_θ, p_ϕ]
 
         # Metric at the current position
         g = metric(r, θ)
 
+        
         # Calculate conserved quantities at current step
-        E, Lz, Q = calculate_conserved_quantities(g, p, a)
+        E, Lz, Q = calculate_conserved_quantities(g, p, a, θ)
+        H = g[1,1]*p_t^2 + g[2,2]*p_r^2 + g[3,3]*p_θ^2 + g[4,4]*p_ϕ^2 + 2*g[1,4]*p_t*p_ϕ
+
 
         # Store the values for plotting
         push!(E_vals, E)
         push!(L_vals, Lz)
         push!(Q_vals, Q)
+        push!(H_vals, H)
     end
 
     # Extract radial and azimuthal values for plotting
@@ -118,6 +139,19 @@ for x in x_values
             fraction = (π/2 - θ1) / (θ2 - θ1)
             r_cross = r_vals[i] + fraction * (r_vals[i + 1] - r_vals[i])
             ϕ_cross = ϕ_vals[i] + fraction * (ϕ_vals[i + 1] - ϕ_vals[i])
+            
+            # Interpolated momenta at the hit
+            p_t_hit = sol[i][5] + fraction * (sol[i+1][5] - sol[i][5])
+            p_r_hit = sol[i][6] + fraction * (sol[i+1][6] - sol[i][6])
+            p_θ_hit = sol[i][7] + fraction * (sol[i+1][7] - sol[i][7])
+            p_ϕ_hit = sol[i][8] + fraction * (sol[i+1][8] - sol[i][8])
+
+            # λ_cross = sol.t[i] + fraction * (sol.t[i + 1] - sol.t[i])
+
+            # p_t_hit = sol(λ_cross)[5]
+            # p_r_hit = sol(λ_cross)[6]
+            # p_θ_hit = sol(λ_cross)[7]
+            # p_ϕ_hit = sol(λ_cross)[8]
 
             # Normalize ϕ_cross between 0 and 2π
             ϕ_cross = mod(ϕ_cross, 2π)
@@ -135,13 +169,15 @@ for x in x_values
     # Record the intersection and store the trajectory if it occurs
     if hit_disc
         # Store the (x, r_hit, ϕ_hit) for later use
-        push!(disc_hits, (x, r_hit, ϕ_hit))
+        # Record the intersection with momenta
+        push!(disc_hits, (b, r_hit, ϕ_hit, p_t_hit, p_r_hit, p_θ_hit, p_ϕ_hit))
 
         # Append λ, E, L, Q for hitting geodesics only
         push!(λ_vals_all, λ_vals)
         push!(E_vals_all, E_vals)
         push!(L_vals_all, L_vals)
         push!(Q_vals_all, Q_vals)
+        push!(H_vals_all, H_vals)
 
         # Extract positions for plotting
         x_vals = [sqrt(r^2 + a^2) * sin(θ) * cos(ϕ) for (r, θ, ϕ) in zip(r_vals, θ_vals, ϕ_vals)]
@@ -235,3 +271,27 @@ for i in 1:length(λ_vals_all)
 end
 
 display(pl_Qconserved)
+
+
+pl_Hconserved = plot(
+    xlabel = "Affine Parameter λ",
+    ylabel = "|ΔH| (log scale)",
+    title = "Hamiltonian Difference |H₀ - H(λ)|",
+    legend = :outerright,
+    yscale = :log10,
+)
+
+for i in 1:length(λ_vals_all)
+    λ_vals = λ_vals_all[i]
+    abs_H_diff = abs.(H_vals_all[i] .- H_vals_all[i][1])
+    abs_H_diff[abs_H_diff .== 0] .= 1e-10  # Replace zeros with small values
+
+    plot!(
+        pl_Hconserved,
+        λ_vals, abs_H_diff,
+        label = "|ΔH| for x=$(disc_hits[i][1])",
+        lw = 1.5
+    )
+end
+
+display(pl_Hconserved)

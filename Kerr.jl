@@ -1,5 +1,5 @@
 using LinearAlgebra, DifferentialEquations, Plots
-using Roots
+
 
 # Constants
 M = 1.0
@@ -13,7 +13,7 @@ r0 = observer[1]
 λ0 = observer[4]
 
 # Example usage for transforming and solving for initial conditions
-x, y = 0.0, 0.0  # Example values for (x, y) in observer's image plane
+x, y = 6.0, 0.0  # Example values for (x, y) in observer's image plane
 x_bh, y_bh, z_bh = transform_to_bh_coords(x, y, observer, a)
 r, θ, ϕ = to_boyer_lindquist(x_bh, y_bh, z_bh, a)
 
@@ -76,7 +76,7 @@ end
 # Set up and solve the ODE problem
 tspan = (0.0, 5000.0)
 prob = ODEProblem(intprob!, u0, tspan)
-sol = @time solve(prob, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=0.01)
+sol = @time solve(prob, Tsit5(), abstol=1e-14, reltol=1e-14, dtmax=0.01)
 
 # Initialize arrays to store conserved quantities
 E_vals = []
