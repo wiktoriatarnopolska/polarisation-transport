@@ -102,13 +102,12 @@ end
 function metric(r, θ)
     Δ = r^2 - 2 * r + a^2
     Σ = r^2 + a^2 * cos(θ)^2
-    f = 1 - 2 * M / r
 
-    g_tt = -(f * r^2 / Σ)
-    g_rr = 1/f
+    g_tt = -(1 - (2 * r/ Σ))
+    g_rr = Σ/Δ
     g_θθ = Σ
-    g_ϕϕ = (r^2 + a^2 + ((2 * M * r * a^2 * sin(θ)^2 )/ Σ)) * sin(θ)^2
-    g_tϕ = -2 * M * r * a * sin(θ)^2 / Σ
+    g_ϕϕ = (sin(θ)^2 / Σ) * ((r^2 + a^2)^2 - Δ * a^2 * sin(θ)^2)
+    g_tϕ = -(2 * r * a * sin(θ)^2) / Σ
 
     g = [
         g_tt     0        0        g_tϕ;
@@ -144,7 +143,7 @@ end
 function transform_to_bh_coords(x, y, observer, a)
     r_obs, θ_obs, ϕ_obs = observer[1:3]
 
-    D = (sqrt(r0^2 + a^2)) * sin(θ_obs) - y * cos(θ_obs)
+    D = (sqrt(r_obs^2 + a^2)) * sin(θ_obs) - y * cos(θ_obs)
     
     # Cartesian coordinates relative to the BH
     x_bh = D * cos(ϕ_obs) - x * sin(ϕ_obs)

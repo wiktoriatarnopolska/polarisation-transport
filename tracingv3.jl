@@ -76,7 +76,7 @@ for x in x_values
     prob = ODEProblem(intprob!, u0, tspan)
 
     # Solve the ODE
-    sol = solve(prob, Tsit5(), callback=callback, abstol=1e-14, reltol=1e-14, dtmax=0.01)
+    sol = solve(prob, Tsit5(), callback=callback, abstol=1e-9, reltol=1e-9)
 
     # Extract λ (affine parameter) and quantities for plotting
     λ_vals = sol.t

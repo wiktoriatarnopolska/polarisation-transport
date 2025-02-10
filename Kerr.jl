@@ -5,7 +5,9 @@ using LinearAlgebra, DifferentialEquations, Plots
 M = 1.0
 a = 0.9  # Set this to a non-zero value for Kerr spacetime (rotating black hole)
 
-observer = (1000.0, deg2rad(90), 0.0, 0.0)
+r_horizon = horizon(a)
+
+observer = (1000.0, deg2rad(60), 0.0, 0.0)
 
 r0 = observer[1]
 θ0 = observer[2]
@@ -19,10 +21,13 @@ r, θ, ϕ = to_boyer_lindquist(x_bh, y_bh, z_bh, a)
 
 Σ = r^2 + a^2 * cos(θ)^2
 
+R = sqrt(r^2 + a^2)
+Φ = ϕ - ϕ0
+
 # Initial radial, theta, phi momentum components
-p_r = - (r * sqrt(r^2 + a^2) * sin(θ) * sin(θ0) * cos(ϕ - ϕ0) + (r^2 + a^2) * cos(θ) * cos(θ0))/ (Σ)
-p_θ = (r * sin(θ) * cos(θ0) - sqrt(r^2 + a^2) * cos(θ) * sin(θ0) * cos(ϕ-ϕ0))/(Σ)
-p_ϕ = (sin(θ0) * sin(ϕ-ϕ0))/(sqrt(r^2 + a^2) * sin(θ))
+p_r = - (r * R * sin(θ) * sin(θ0) * cos(Φ) + R^2 * cos(θ) * cos(θ0))/ (Σ)
+p_θ = (r * sin(θ) * cos(θ0) - R * cos(θ) * sin(θ0) * cos(Φ))/(Σ)
+p_ϕ = (sin(θ0) * sin(Φ))/(R * sin(θ))
 
 # Metric at the initial position
 g = metric(r, θ)
@@ -76,12 +81,13 @@ end
 # Set up and solve the ODE problem
 tspan = (0.0, 5000.0)
 prob = ODEProblem(intprob!, u0, tspan)
-sol = @time solve(prob, Tsit5(), abstol=1e-14, reltol=1e-14, dtmax=0.01)
+sol = @time solve(prob, Tsit5(), abstol=1e-10, reltol=1e-10)
 
 # Initialize arrays to store conserved quantities
 E_vals = []
 L_vals = []
 Q_vals = []
+H_vals = []
 
 for i in 1:length(sol)
     x = sol[i][1:4]
@@ -98,15 +104,16 @@ for i in 1:length(sol)
     g_θθ = g[3,3]
     g_ϕϕ = g[4,4]
 
-
-    # Compute conserved quantities
     E = -g_tt * v[1] - g_tϕ * v[4] # Energy-like quantity
     L = g_tϕ * v[1] + g_ϕϕ * v[4]  # Angular momentum-like quantity
-    Q = (g_θθ * v[3])^2 + cos(θ)^2 * ( - a^2 * (g_tt * v[1])^2 + (g_ϕϕ * v[4] + g_tϕ * v[1])^2 / sin(θ)^2)
+    Q = (g_θθ * v[3])^2 + cos(θ)^2 * ( - a^2 * (g_tt * v[1]+ g_tϕ * v[4])^2 + ((g_ϕϕ * v[4] + g_tϕ * v[1])^2 / sin(θ)^2))
+    H = g[1,1]*v[1]^2 + g[2,2]*v[2]^2 + g[3,3]*v[3]^2 + g[4,4]*v[4]^2 + 2*g[1,4]*v[1]*v[4]
+
 
     push!(E_vals, E)
     push!(L_vals, L)
     push!(Q_vals, Q)
+    push!(H_vals, H)
 end
 
 
@@ -133,7 +140,6 @@ pl_cartesian = plot(
 )
 
 # Overlay event horizon in Cartesian coordinates
-r_horizon = 1 + sqrt(1 - a^2)  # Event horizon radius for Kerr black hole
 circle_x = [r_horizon * cos(θ) for θ in 0:0.01:2π]
 circle_y = [r_horizon * sin(θ) for θ in 0:0.01:2π]
 
@@ -163,6 +169,10 @@ pl_Econserved = plot(
 abs_E_diff = abs.(E_vals .- E_vals[1])
 abs_E_diff[abs_E_diff .== 0] .= 1e-10  # Replace zeros with small values
 
+r_vals = [sol[j][2] for j in 1:length(sol)]
+r_diff = r_vals .- r_horizon  # Compute r - r_horizon
+
+
 plot!(
     pl_Econserved,
     λ_vals, abs_E_diff,
@@ -170,6 +180,14 @@ plot!(
     lw=1.5
 )
 
+# plot!(
+#     pl_Econserved,
+#     λ_vals, r_diff,
+#     label = "r - r_horizon",
+#     lw = 1.5,
+#     linestyle = :dash,
+#     yscale = :log10,
+# )
 
 pl_Lconserved = plot(
     xlabel="Affine Parameter λ",
@@ -209,3 +227,21 @@ plot!(
     lw=1.5
 )
 
+
+abs_H_diff = abs.(H_vals .- H_vals[1])
+abs_H_diff[abs_H_diff .== 0] .= 1e-10  # Replace zeros with small values
+
+pl_Hconserved = plot(
+    xlabel = "Affine Parameter λ",
+    ylabel = "|ΔH| (log scale)",
+    title = "Hamiltonian Difference |H₀ - H(λ)|",
+    legend = :outerright,
+    yscale = :log10,
+)
+
+plot!(
+        pl_Hconserved,
+        λ_vals, abs_H_diff,
+        label = "|ΔH|",
+        lw = 1.5
+    )
