@@ -63,7 +63,7 @@ function disc_hits_plot(r_in, r_out, r_horizon, x_hits, y_hits, x_vals, y_vals)
     plot!(
     pl_disc,
     x_vals, y_vals,
-    lw = 2.0,
+    lw = 1.0,
     linecolor = :steelblue,
     label = "incident ray"
     )

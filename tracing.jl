@@ -243,10 +243,25 @@ p = [p_t, p_r, p_θ, p_ϕ]
 
 u0_rev = [λ0, r_hit, θ_hit, ϕ_hit, p_t, p_r, p_θ, p_ϕ]
 
-tspan_rev = (0.0, -λ_vals[end])
+# tspan_rev = (0.0, -λ_vals[end])
+
+# Condition function: it returns the difference between the current radial coordinate and the observer's radius.
+function observer_condition(u, t, integrator)
+    return u[2] - observer[1]
+end
+
+# Affect function: simply terminate the integration when the event is found.
+function observer_affect!(integrator)
+    terminate!(integrator)
+end
+
+# Create a ContinuousCallback that uses rootfinding (which by default uses a bisection‐like procedure)
+obs_callback = ContinuousCallback(observer_condition, observer_affect!;
+                                  rootfind = true,
+                                  abstol = 1e-9, reltol = 1e-9)
 
 prob_rev = ODEProblem(intprob!, u0_rev, tspan_rev)
-sol_rev = solve(prob_rev, Tsit5(), abstol=1e-9, reltol=1e-9)
+sol_rev = solve(prob_rev, Tsit5(), callback = obs_callback, abstol=1e-9, reltol=1e-9)
 
 # Check conservation of quantities at each time step
 for i in 1:length(sol_rev)
@@ -279,7 +294,7 @@ end
 disc_hits_plot(r_in, r_out, r_horizon, x_hits, y_hits, x_vals, y_vals)
 plot!(
     x_vals, y_vals,
-    lw = 0.75,
+    lw = 1.0,
     linecolor = :red,
     label = "returning ray",
     linestyle=:dash
