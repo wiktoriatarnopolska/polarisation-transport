@@ -1,11 +1,13 @@
 using LinearAlgebra, DifferentialEquations, Plots
+using LaTeXStrings
+
 
 # Constants
 M = 1.0
 a = 0.0  # Schwarzschild spacetime (non-rotating black hole)
 
 # Initial conditions
-r0 = sqrt(27)       # Initial radial distance
+r0 = 3.0       # Initial radial distance
 θ0 = π / 2      # Equatorial plane
 ϕ0 = 0.0        # Initial azimuthal angle
 λ0 = 0.0        # Initial affine parameter
@@ -126,7 +128,7 @@ function intprob!(du, u, p, λ)
     du[5:8] .= dv
 end
 
-tspan = (0.0, 5000.0)
+tspan = (0.0, 1000.0)
 
 # Solve the ODE using in-place form
 prob = ODEProblem(intprob!, u0, tspan)
@@ -150,13 +152,14 @@ for i in 1:length(sol)
     g_rr = g[2,2]
     g_θθ = g[3,3]
     g_ϕϕ = g[4,4]
-    
+
 
 
     # Compute conserved quantities
     E = -g_tt * v[1]  # Energy-like quantity
     L = g_ϕϕ * v[4]   # Angular momentum-like quantity
-    Q = (g_θθ * v[3])^2 + cos(θ)^2 * ( - a^2 * (g_tt * v[1])^2 + (g_ϕϕ * v[4] + g_tϕ * v[1])^2 / sin(θ)^2)
+    Q = (g_θθ * v[3])^2 + cos(θ)^2 * (((g_ϕϕ * v[4])^2 / sin(θ)^2))
+
 
     push!(E_vals, E)
     push!(L_vals, L)
@@ -176,7 +179,6 @@ pl = plot(
     color = :blue,
     proj = :polar,
     ylim = (0.0, 15),
-    title = "Photon Path in Spherical Coordinates"
 )
 
 plot!(
@@ -195,14 +197,13 @@ y_vals = [r * sin(ϕ) for (r, ϕ) in zip(r_vals, ϕ_vals)]
 pl_cartesian = plot(
     x_vals, y_vals,
     lw = 2,
-    label = "Photon Path",
-    color = :blue,
-    xlabel = "x",
-    ylabel = "y",
+    label = L"\textrm{Photon \, \, path}",
+    color = :indigo,
+    xlabel = L"x",
+    ylabel = L"y",
     aspect_ratio=:equal,
-    title = "Photon Path in Cartesian Coordinates",
-    xlim = (-15, 15),
-    ylim = (-15, 15)
+    xlim = (-5, 5),
+    ylim = (-5, 5)
 )
 
 # Overlay event horizon in Cartesian coordinates
@@ -213,69 +214,56 @@ plot!(
     pl_cartesian,
     circle_x, circle_y,
     lw = 2,
-    label = "Event Horizon",
+    label = L"\textrm{Event \, horizon}",
     color = :black
 )
 
 # Display both plots
 plot(pl, pl_cartesian, layout = (1, 2), size = (1200, 600))
-#savefig("Schwarzschild.png")
-# Extract affine parameter values
+
 λ_vals = sol.t
 
-# Plot Energy-like and Momentum-like Quantity
-plot(
-    λ_vals, 
-    E_vals, 
-    xlabel="Affine Parameter λ", 
-    ylabel="Energy-like Quantity E", 
-    label="E(λ)", 
-    legend=:outerbottom, 
-    colour =:red,
-    )
-plot(
-    λ_vals, 
-    L_vals, 
-    xlabel="Affine Parameter λ", 
-    ylabel="Momentum-like Quantity L", 
-    label="L(λ)", 
-    legend=:outerbottom, 
-    colour =:blue,
-    )
-plot(
-    λ_vals, 
-    Q_vals, 
-    xlabel="Affine Parameter λ", 
-    ylabel="Carter Constant Q", 
-    label="Q(λ)", 
-    legend=:outerbottom, 
-    colour =:green,
-    lw = 1.5
-    )
+abs_E_diff = abs.(E_vals .- E_vals[1])
+abs_E_diff[abs_E_diff .== 0] .= 1e-10  # Replace zeros with small values
 
-plot(
-    λ_vals, 
-    E_vals, 
-    xlabel="Affine Parameter λ", 
-    ylabel="Energy-like Quantity E", 
-    label="E(λ)", 
-    legend=:outerbottom, 
-    colour =:red,
-    lw=1.5
-    )
+abs_L_diff = abs.(L_vals .- L_vals[1])
+abs_L_diff[abs_L_diff .== 0] .= 1e-10  # Replace zeros with small values
+
+abs_Q_diff = abs.(Q_vals .- Q_vals[1])
+abs_Q_diff[abs_Q_diff .== 0] .= 1e-10  # Replace zeros with small values
+
+pl_conserved = plot(
+    xlabel=L"\textrm{Affine \, parameter \,} λ",
+    ylabel=L"|Δ\textrm{Quantity}| \, \, (\textrm{log \, scale})",
+    legend=:outerright,
+    yscale=:log10,
+)
+
 plot!(
-    λ_vals, 
-    L_vals, 
-    title = "Conservation of Q, E and L", 
-    xlabel="Affine Parameter λ", 
-    ylabel="Angular Momentum-like Quantity L", 
-    label="L(λ)", 
-    colour =:blue,
-    lw=1.5
-    )
+    pl_conserved,
+    λ_vals, abs_E_diff,
+    label=L"|Δ\textrm{E}|",
+    lw=2,
+    color=:firebrick
+)
+
+
 plot!(
-    λ_vals, 
-    Q_vals, 
-    label = "Q(λ)",
-    lw=1.5)
-savefig("conservations_a=0.0_r=0.3.png")
+    pl_conserved,
+    λ_vals, abs_L_diff,
+    label=L"|Δ\textrm{L}|",
+    lw=2,
+    linestyle=:dash,
+    color=:blue2
+)
+
+plot!(
+    pl_conserved,
+    λ_vals, abs_Q_diff,
+    label=L"|Δ\textrm{Q}|",
+    lw=2,
+    linestyle=:dot,
+    color=:seagreen
+)
+
+plot(pl_cartesian, pl_conserved, layout = (1, 2))

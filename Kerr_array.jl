@@ -2,55 +2,19 @@ using LinearAlgebra, DifferentialEquations, Plots
 
 # Constants
 M = 1.0  # Mass of the black hole
-a = 0.0
+a = 0.9
 
 r_horizon = horizon(a)
 
 observer = (1000.0, deg2rad(90), 0.0, 0.0)
-
-# Define the ODE function using an in-place form
-function intprob!(du, u, p, λ)
-    # Current position and velocity
-    x = u[1:4]
-    v = u[5:8]
-
-    r_val, θ_val = x[2], x[3]
-
-    # Initialize du
-    du .= 0.0
-
-    # Terminate the integration if r crosses the event horizon
-    if r_val <= r_horizon
-        du[1:4] .= v
-        return
-    end
-
-    # Compute analytical Christoffel symbols
-    Γ = compute_christoffel_analytical(r_val, θ_val)
-
-    # Compute the derivatives of velocity
-    dv = zeros(4)
-    for μ in 1:4
-        sum_ = 0.0
-        for ν in 1:4
-            for λ in 1:4
-                sum_ += Γ[μ, ν, λ] * v[ν] * v[λ]
-            end
-        end
-        dv[μ] = -sum_
-    end
-
-    # Assign derivatives to du
-    du[1:4] .= v
-    du[5:8] .= dv
-end
 
 tspan = (0.0, 5000.0)
 
 # Define a range of impact parameters
 # b_values = collect(-10.0:1:10.0)
 x_values = collect(-10.0:1.0:10.0)  # x values from -10 to 10 with step size 1
-
+x_values
+deleteat!(x_values, 11)
 
 # Arrays to store trajectories
 x_vals_all = []
@@ -100,6 +64,8 @@ for x in x_values
     # # Complete the initial velocity vector
     # v = [v_t; v_r; v_θ; v_ϕ]
 
+    y = 0
+
     # Transform to BH Cartesian coordinates
     x_bh, y_bh, z_bh = transform_to_bh_coords(x, y, observer, a)
 
@@ -126,7 +92,7 @@ for x in x_values
 
     # Solve the ODE
     prob = ODEProblem(intprob!, u0, tspan)
-    sol = solve(prob, Tsit5(), abstol=1e-12, reltol=1e-12, dtmax=1.0)
+    sol = solve(prob, Tsit5(), abstol=1e-9, reltol=1e-9)
 
     # Extract positions
     r_vals = [sol[i][2] for i in 1:length(sol)]
@@ -210,11 +176,11 @@ pl_Econserved = plot(
     xlabel="Affine Parameter λ",
     ylabel="|ΔE| (log scale)",
     title="Energy Difference |E₀ - E(λ)|",
-    legend=:outerright,
     yscale=:log10,
+    legend=false
 )
 
-for i in 1:length(b_values)
+for i in 1:length(x_values)
     λ_vals = λ_vals_all[i]
     abs_E_diff = abs.(E_vals_all[i] .- E_vals_all[i][1])
     abs_E_diff[abs_E_diff .== 0] .= 1e-10  # Replace zeros with small values
@@ -222,7 +188,6 @@ for i in 1:length(b_values)
     plot!(
         pl_Econserved,
         λ_vals, abs_E_diff,
-        label="|ΔE| for b=$(b_values[i])",
         lw=1.5
     )
 end
@@ -234,11 +199,11 @@ pl_Lconserved = plot(
     xlabel="Affine Parameter λ",
     ylabel="|ΔL| (log scale)",
     title="Momentum Difference |L₀ - L(λ)|",
-    legend=:outerright,
     yscale=:log10,
+    legend=false
 )
 
-for i in 1:length(b_values)
+for i in 1:length(x_values)
     λ_vals = λ_vals_all[i]
     abs_L_diff = abs.(L_vals_all[i] .- L_vals_all[i][1])
     abs_L_diff[abs_L_diff .== 0] .= 1e-10  # Replace zeros with small values
@@ -246,7 +211,6 @@ for i in 1:length(b_values)
     plot!(
         pl_Lconserved,
         λ_vals, abs_L_diff,
-        label="|ΔL| for b=$(b_values[i])",
         lw=1.5
     )
 end
@@ -257,11 +221,11 @@ pl_Qconserved = plot(
     xlabel="Affine Parameter λ",
     ylabel="|ΔQ| (log scale)",
     title="Carter Const. Difference |Q₀ - Q(λ)|",
-    legend=:outerright,
+    legend=:false,
     yscale=:log10,
 )
 
-for i in 1:length(b_values)
+for i in 1:length(x_values)
     λ_vals = λ_vals_all[i]
     abs_Q_diff = abs.(Q_vals_all[i] .- Q_vals_all[i][1])
     abs_Q_diff[abs_Q_diff .== 0] .= 1e-10  # Replace zeros with small values
@@ -269,9 +233,10 @@ for i in 1:length(b_values)
     plot!(
         pl_Qconserved,
         λ_vals, abs_Q_diff,
-        label="|ΔQ| for b=$(b_values[i])",
         lw=1.5
     )
 end
 
 display(pl_Qconserved)
+
+plt = plot(pl_Econserved, pl_Lconserved, pl_Qconserved, layout = (1, 3))

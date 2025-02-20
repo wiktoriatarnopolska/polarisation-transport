@@ -70,7 +70,7 @@ function disc_hits_plot(r_in, r_out, r_horizon, x_hits, y_hits, x_vals, y_vals)
 
 end
 
-function conservations_plot(sol, E_vals, L_vals, Q_vals, H_vals)
+function conservations_plot(sol, E_vals, L_vals, Q_vals, H_vals, flip)
 # Extract affine parameter values
     λ_vals = sol.t
 
@@ -92,6 +92,7 @@ function conservations_plot(sol, E_vals, L_vals, Q_vals, H_vals)
         title="Quantity Difference",
         legend=:outerright,
         yscale=:log10,
+        xflip = flip
     )
 
     plot!(

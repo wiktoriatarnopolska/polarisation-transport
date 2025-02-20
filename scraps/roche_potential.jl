@@ -27,6 +27,6 @@ z_grid = [roche_potential(xi, yi, q) for yi in y_grid, xi in x_grid]
 wireframe(x_grid, y_grid, z_grid)
 
 plot!(x, y, z, st=:surface, color=:linear_worb_100_25_c53_n256,
-xlabel="x (solar radii)", zlabel="Potential (dimensionless)",
-camera=(38, 50), zlims = (-6, 0), fillalpha = 0.9, legend=:left)  # Azimuth and Elevation angles
-annotate!(0, 5, -16, text("y (solar radii)", 12, :black))
+xlabel=L"x \, (R_\textrm{⊙})", zlabel=L"\textrm{Potential} \, (\textrm{dimensionless})",
+camera=(38, 50), zlims = (-6, 0), fillalpha = 0.9, legend=:left, frame=:box)  # Azimuth and Elevation angles
+annotate!(0, 5, -16, text(L"y \, (R_\textrm{⊙})", 12, :black))
