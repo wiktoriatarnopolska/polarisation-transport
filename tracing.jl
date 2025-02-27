@@ -213,7 +213,7 @@ conservations_plot(sol, E_vals, L_vals, Q_vals, H_vals, false)
 #   TO TRACE BACK
 
 # Arrays to store λ (affine parameter) and conserved quantities for plotting for hitting geodesics
-#λ_vals = []
+λ_vals = []
 E_vals = []
 L_vals = []
 Q_vals = []
@@ -231,29 +231,23 @@ g_ϕϕ = g[4,4]
 # Extract momentum components at hit
 p_hit = [p_t_hit, p_r_hit, p_θ_hit, p_ϕ_hit]
 
+μ = incidence_angle(r_hit, θ_hit, ϕ_hit, p_hit)
+
 # Reversing
-p_t = p_t_hit
-p_r = p_r_hit
-p_θ = p_θ_hit
-p_ϕ = p_ϕ_hit
+p_t = - p_t_hit
+p_r = - p_r_hit
+p_θ = - p_θ_hit
+p_ϕ = - p_ϕ_hit
 
 H = g[1,1]*p_t^2 + g[2,2]*p_r^2 + g[3,3]*p_θ^2 + g[4,4]*p_ϕ^2 + 2*g[1,4]*p_t*p_ϕ
 
 p = [p_t, p_r, p_θ, p_ϕ]
 
+μ = incidence_angle(r_hit, θ_hit, ϕ_hit, p)
+
 p0_rev = [λ0, r_hit, θ_hit, ϕ_hit, p_t, p_r, p_θ, p_ϕ]
 
-tspan_rev = (0.0, -5000.0)
-
-# Condition function: it returns the difference between the current radial coordinate and the observer's radius.
-function observer_condition(u, t, integrator)
-    return u[2] - observer[1]
-end
-
-# Affect function: simply terminate the integration when the event is found.
-function observer_affect!(integrator)
-    terminate!(integrator)
-end
+tspan_rev = (0.0, 5000.0)
 
 # Create a ContinuousCallback that uses rootfinding (which by default uses a bisection‐like procedure)
 obs_callback = ContinuousCallback(observer_condition, observer_affect!;
@@ -311,85 +305,6 @@ plot!(
     linestyle=:dash
 )
 
-conservations_plot(sol_rev, E_vals, L_vals, Q_vals, H_vals, true)
+conservations_plot(sol_rev, E_vals, L_vals, Q_vals, H_vals, false)
 
-
-##### construct a LNRF tetrad
-
-function lnrf_tetrad(r, θ, a)
-    # Calculate metric-related quantities
-    Σ = r^2 + (a * cos(θ))^2
-    Δ = r^2 - 2M*r + a^2
-    A = (r^2 + a^2)^2 - a^2 * Δ * sin(θ)^2
-    ω = 2*a*r/A  # Frame dragging angular velocity
-
-    # Initialize tetrad matrix (each row is a tetrad vector)
-    e = zeros(4, 4)
-    
-    # Time-like tetrad vector (e^μ_0)
-    e[1,1] = sqrt(A / Δ * Σ)                                   # t component
-    e[1,2] = 0                                                 # r component
-    e[1,3] = 0                                                 # θ component
-    e[1,4] = 2 * a * r/(sqrt(Δ*Σ*A))                             # φ component
-    
-    # Radial tetrad vector (e^μ_1)
-    e[2,1] = 0
-    e[2,2] = sqrt(Δ/Σ)
-    e[2,3] = 0
-    e[2,4] = 0
-    
-    # Theta tetrad vector (e^μ_2)
-    e[3,1] = 0
-    e[3,2] = 0
-    e[3,3] = 1 / sqrt(Σ)
-    e[3,4] = 0
-    
-    # Phi tetrad vector (e^μ_3)
-    e[4,1] = 0
-    e[4,2] = 0
-    e[4,3] = 0
-    e[4,4] = sqrt(Σ / A) / sin(θ)
-    
-    return e
-end
-
-#### calculate incidence angle (use hit coordinates or post-reversal coordinates?)
-#    calculate incidence angle and origin angle and compare
-
-function incidence_angle(r_hit, θ_hit, ϕ_hit, p_hit)
-    # Construct coordinate momentum vector
-    p_hit = [p_t, p_r, p_θ, p_ϕ]
-    
-    # Get LNRF tetrad at hit point
-    e = lnrf_tetrad(r_hit, θ_hit, a)
-    
-    # Transform momentum to LNRF frame
-    p_lnrf = zeros(4)
-    for μ in 1:4
-        for ν in 1:4
-            p_lnrf[μ] += e[μ,ν] * p_hit[ν]
-        end
-    end
-    
-    # In the LNRF frame, the disc's normal vector at θ = π/2 is [0, 0, 1, 0]
-    # Only need the spatial components for the angle calculation
-    p_spatial = p_lnrf[2:4]
-    n_disc = [0.0, 1.0, 0.0]  # Normal vector in LNRF frame
-    
-    norm_p_spatial = sqrt(sum(p_spatial .^ 2))
-    norm_n_disc = sqrt(sum(n_disc .^ 2))
-
-    # Calculate angle using dot product
-    cos_angle = abs(dot(p_spatial, n_disc)) / (norm_p_spatial * norm_n_disc)
-    angle = acos(cos_angle)
-    
-    return rad2deg(angle)  # Convert to degrees
-end
-
-μ = incidence_angle(r_hit, θ_hit, ϕ_hit, p_hit)
-
-μ2 = incidence_angle(r_hit, θ_hit, ϕ_hit, p0_rev)
-
-##### convert from coordinate frame to local basis
-##### transport along a geodesic
-##### convert back to global (B-L?)
+export r_hit, θ_hit, r0, θ0

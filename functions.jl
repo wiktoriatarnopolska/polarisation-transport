@@ -266,6 +266,81 @@ function intprob!(du, u, p, λ)
     du[5:8] .= dp
 end
 
+# Condition function: it returns the difference between the current radial coordinate and the observer's radius.
+function observer_condition(u, t, integrator)
+    return u[2] - observer[1]
+end
+
+# Affect function: simply terminate the integration when the event is found.
+function observer_affect!(integrator)
+    terminate!(integrator)
+end
+
+function lnrf_tetrad(r, θ, a)
+    # Calculate metric-related quantities
+    Σ = r^2 + (a * cos(θ))^2
+    Δ = r^2 - 2*r + a^2
+    A = (r^2 + a^2)^2 - a^2 * Δ * sin(θ)^2
+    ω = 2*a*r/A  # Frame dragging angular velocity
+
+    # Initialize tetrad matrix (each row is a tetrad vector)
+    e = zeros(4, 4)
+    
+    # Time-like tetrad vector (e^μ_0)
+    e[1,1] = sqrt(A / (Δ * Σ))                                   # t component
+    e[1,2] = 0                                                 # r component
+    e[1,3] = 0                                                 # θ component
+    e[1,4] = 2 * a * r/(sqrt(Δ*Σ*A))                             # φ component
+    
+    # Radial tetrad vector (e^μ_1)
+    e[2,1] = 0
+    e[2,2] = sqrt(Δ/Σ)
+    e[2,3] = 0
+    e[2,4] = 0
+    
+    # Theta tetrad vector (e^μ_2)
+    e[3,1] = 0
+    e[3,2] = 0
+    e[3,3] = 1 / sqrt(Σ)
+    e[3,4] = 0
+    
+    # Phi tetrad vector (e^μ_3)
+    e[4,1] = 0
+    e[4,2] = 0
+    e[4,3] = 0
+    e[4,4] = sqrt(Σ / A) / sin(θ)
+    
+    return e
+end
+
+function incidence_angle(r_hit, θ_hit, ϕ_hit, p)
+    
+    # Get LNRF tetrad at hit point
+    e = lnrf_tetrad(r_hit, θ_hit, a)
+    
+    # Transform momentum to LNRF frame
+    p_lnrf = zeros(4)
+    for μ in 1:4
+        for ν in 1:4
+            p_lnrf[μ] += e[μ,ν] * p[ν]
+        end
+    end
+    
+    # In the LNRF frame, the disc's normal vector at θ = π/2 is [0, 0, 1, 0]
+    # Only need the spatial components for the angle calculation
+    p_spatial = p_lnrf[2:4]
+    n_disc = [0.0, 1.0, 0.0]  # Normal vector in LNRF frame
+    
+    norm_p_spatial = sqrt(sum(p_spatial .^ 2))
+    norm_n_disc = sqrt(sum(n_disc .^ 2))
+
+    # Calculate angle using dot product
+    cos_angle = abs(dot(p_spatial, n_disc)) / (norm_p_spatial * norm_n_disc)
+    angle = acos(cos_angle)
+    
+    return rad2deg(angle)  # Convert to degrees
+end
+
 export isco_radius, 
 novikov_thorne_profile, 
 compute_christoffel_analytical, 
@@ -278,4 +353,8 @@ to_boyer_lindquist,
 solve_pt,
 calculate_energy_angular_momentum,
 calculate_conserved_quantities,
-intprob!
+intprob!,
+observer_condition,
+observer_affect!,
+lnrf_tetrad,
+incidence_angle
